@@ -342,12 +342,16 @@ class Build360_AI_API {
         $base_title = isset($external_api_data['product_title']) ? $external_api_data['product_title'] : '';
         $base_description = !empty($external_api_data['product_description']) ? $external_api_data['product_description'] : '-';
         $fields_requested = isset($external_api_data['fields_requested']) ? $external_api_data['fields_requested'] : array();
+        $categories = isset($external_api_data['categories']) ? $external_api_data['categories'] : '';
+        $attributes = isset($external_api_data['attributes']) ? $external_api_data['attributes'] : '';
+        $tags = isset($external_api_data['tags']) ? $external_api_data['tags'] : '';
+        $keywords = isset($external_api_data['keywords']) ? $external_api_data['keywords'] : '';
 
         // Construct the final prompt using agent's system prompt and provided data
-        // Placeholders like {{title}}, {{description}}, {{fields_requested}} can be used in the system_prompt_template.
+        // Placeholders like {{title}}, {{description}}, {{fields_requested}}, {{categories}}, {{attributes}}, {{tags}}, {{keywords}} can be used in the system_prompt_template.
         $final_prompt = str_replace(
-            array('{{title}}', '{{description}}', '{{fields_requested}}'),
-            array($base_title, $base_description, implode(', ', $fields_requested)),
+            array('{{title}}', '{{description}}', '{{fields_requested}}', '{{categories}}', '{{attributes}}', '{{tags}}', '{{keywords}}'),
+            array($base_title, $base_description, implode(', ', $fields_requested), $categories, $attributes, $tags, $keywords),
             $system_prompt_template
         );
 
@@ -370,9 +374,10 @@ class Build360_AI_API {
             'type'                => $api_type,
             'agent_id'            => $agent_id,
             'text_style'          => $api_text_style,
-            // 'fields_to_generate' => $fields_requested, // If API supports specifying which fields to generate output for
-            // Add max length if applicable and if the agent or API supports it per field or globally
-            // For example, if agent settings have max_length: $data['max_length'] = $agent_settings['max_lengths']['overall'];
+            'categories'          => $categories,
+            'attributes'          => $attributes,
+            'tags'                => $tags,
+            'keywords'            => $keywords,
         );
         
         // TODO: Confirm which API key to use for Authorization: Bearer YOUR_WEBSITE_API_KEY

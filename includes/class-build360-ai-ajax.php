@@ -90,6 +90,7 @@ class Build360_AI_Ajax {
         add_action('wp_ajax_build360_ai_bulk_progress', array($this, 'bulk_progress_handler'));
         add_action('wp_ajax_build360_ai_bulk_results', array($this, 'bulk_results_handler'));
         add_action('wp_ajax_build360_ai_bulk_cancel', array($this, 'bulk_cancel_handler'));
+        add_action('wp_ajax_build360_ai_bulk_dismiss', array($this, 'bulk_dismiss_handler'));
     }
 
     /**
@@ -135,6 +136,10 @@ class Build360_AI_Ajax {
             'description' => isset($payload_raw['description']) ? wp_kses_post($payload_raw['description']) : '',
             'type' => isset($payload_raw['type']) ? sanitize_key($payload_raw['type']) : '', // 'post' or 'taxonomy'
             'agent_id' => isset($payload_raw['agent_id']) ? sanitize_key($payload_raw['agent_id']) : '',
+            'categories' => isset($payload_raw['categories']) ? sanitize_text_field($payload_raw['categories']) : '',
+            'attributes' => isset($payload_raw['attributes']) ? sanitize_text_field($payload_raw['attributes']) : '',
+            'tags' => isset($payload_raw['tags']) ? sanitize_text_field($payload_raw['tags']) : '',
+            'keywords' => isset($payload_raw['keywords']) ? sanitize_text_field($payload_raw['keywords']) : '',
         );
 
         if (empty($payload['agent_id'])) {
@@ -177,11 +182,14 @@ class Build360_AI_Ajax {
             // $final_prompt = str_replace(['{{title}}', '{{description}}'], [$payload['title'], $payload['description']], $prompt_template);
 
             $api_request_data = array(
-                'product_title' => $payload['title'],       // Or however agent config maps it
-                'product_description' => $payload['description'], // Or however agent config maps it
-                'prompt' => 'Generate content based on the provided title and description.', // This will be dynamic based on agent
-                // Agent specific settings (model, style, etc.) will be handled by the API class method using agent_id
-                'fields_requested' => $fields_to_update // Inform API what specific pieces of content are needed
+                'product_title' => $payload['title'],
+                'product_description' => $payload['description'],
+                'prompt' => 'Generate content based on the provided title and description.',
+                'fields_requested' => $fields_to_update,
+                'categories' => $payload['categories'],
+                'attributes' => $payload['attributes'],
+                'tags' => $payload['tags'],
+                'keywords' => $payload['keywords'],
             );
 
             // The API's generate_content method needs to be refactored to accept agent_id
@@ -896,10 +904,28 @@ class Build360_AI_Ajax {
             as_unschedule_all_actions('build360_ai_process_single_product', null, 'build360-ai');
         }
 
+        // Clear active job user meta so progress bar doesn't show permanently
+        delete_user_meta(get_current_user_id(), '_build360_ai_active_bulk_job');
+
         wp_send_json_success(array(
             'message' => __('Bulk generation job has been cancelled.', 'build360-ai'),
             'job_id' => $job_id,
         ));
+    }
+
+    /**
+     * Dismiss the bulk progress bar (clear user meta)
+     */
+    public function bulk_dismiss_handler() {
+        check_ajax_referer('build360_ai_bulk_dismiss_nonce', 'nonce');
+
+        if (!current_user_can('edit_products')) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'build360-ai')));
+            return;
+        }
+
+        delete_user_meta(get_current_user_id(), '_build360_ai_active_bulk_job');
+        wp_send_json_success(array('message' => __('Dismissed.', 'build360-ai')));
     }
 
     /**

@@ -277,7 +277,29 @@ class Build360_AI_Admin {
             }
             $product_localization_data['current_agent_id'] = $current_agent_id;
             $product_localization_data['post_id'] = $current_post_id;
-            
+
+            // Enrich with product metadata for AI context
+            if (function_exists('wc_get_product')) {
+                $product = wc_get_product($current_post_id);
+                if ($product) {
+                    $product_localization_data['product_categories'] = $this->get_product_categories($product);
+                    $product_localization_data['product_tags'] = implode(', ', $this->get_product_keywords($product));
+
+                    // Format attributes as readable string
+                    $attrs = $this->get_product_attributes($product);
+                    $attr_strings = array();
+                    foreach ($attrs as $name => $values) {
+                        $label = wc_attribute_label($name);
+                        if (is_array($values)) {
+                            $attr_strings[] = $label . ': ' . implode(', ', $values);
+                        } else {
+                            $attr_strings[] = $label . ': ' . $values;
+                        }
+                    }
+                    $product_localization_data['product_attributes'] = implode('; ', $attr_strings);
+                }
+            }
+
             // Ensure the nonce for generate_content is present
             if (!isset($product_localization_data['nonces']['generate_content'])) {
                  $product_localization_data['nonces']['generate_content'] = wp_create_nonce('build360_ai_generate_content');
@@ -391,6 +413,7 @@ class Build360_AI_Admin {
                     'bulk_progress' => wp_create_nonce('build360_ai_bulk_progress_nonce'),
                     'bulk_results' => wp_create_nonce('build360_ai_bulk_results_nonce'),
                     'bulk_cancel' => wp_create_nonce('build360_ai_bulk_cancel_nonce'),
+                    'bulk_dismiss' => wp_create_nonce('build360_ai_bulk_dismiss_nonce'),
                 ),
                 'strings' => array(
                     'processing' => __('Processing...', 'build360-ai'),
@@ -412,6 +435,7 @@ class Build360_AI_Admin {
                     'of' => __('of', 'build360-ai'),
                     'results_title' => __('Bulk Generation Results', 'build360-ai'),
                     'edit' => __('Edit', 'build360-ai'),
+                    'dismiss' => __('Dismiss', 'build360-ai'),
                 ),
             ));
         }

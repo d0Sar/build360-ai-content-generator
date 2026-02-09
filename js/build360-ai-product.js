@@ -103,7 +103,11 @@ jQuery(document).ready(function ($) {
                 title: productTitle,
                 description: productDescription,
                 type: 'post',
-                agent_id: agentId
+                agent_id: agentId,
+                categories: build360_ai_vars.product_categories || '',
+                attributes: build360_ai_vars.product_attributes || '',
+                tags: build360_ai_vars.product_tags || '',
+                keywords: $('#build360_ai_keywords').val() || ''
             },
             fields_to_update: fieldsToGenerate,
             language: $languageSelector.val()

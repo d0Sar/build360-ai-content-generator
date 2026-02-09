@@ -30,18 +30,18 @@ class Build360_AI_Generator {
      * @param string $agent_id The ID of the agent to use
      * @return string|WP_Error Generated description or error
      */
-    public function generate_product_description($product_data, $agent_id) {
+    public function generate_product_description($product_data, $agent_id, $extra_context = []) {
         if (empty($agent_id)) return new WP_Error('missing_agent_id', __('Agent ID is required for content generation.', 'build360-ai'));
-        
+
         $prompt = $this->build_product_prompt($product_data);
 
         // Prepare API request data
-        $api_data = [
+        $api_data = array_merge([
             'prompt' => $prompt,
             'product_title' => isset($product_data['product_title']) ? $product_data['product_title'] : $product_data['name'],
-            'product_description' => isset($product_data['product_description']) ? $product_data['product_description'] : '',
+            'product_description' => isset($product_data['description']) ? $product_data['description'] : '',
             'fields_requested' => ['description']
-        ];
+        ], $extra_context);
 
         return $this->api->generate_content($agent_id, 'post', $api_data);
     }
@@ -53,19 +53,19 @@ class Build360_AI_Generator {
      * @param string $agent_id The ID of the agent to use
      * @return string|WP_Error Generated short description or error
      */
-    public function generate_product_short_description($product_data, $agent_id) {
+    public function generate_product_short_description($product_data, $agent_id, $extra_context = []) {
         if (empty($agent_id)) return new WP_Error('missing_agent_id', __('Agent ID is required for content generation.', 'build360-ai'));
 
         $prompt = $this->build_product_prompt($product_data, true);
 
         // Prepare API request data
-        $api_data = [
+        $api_data = array_merge([
             'prompt' => $prompt,
             'product_title' => isset($product_data['product_title']) ? $product_data['product_title'] : $product_data['name'],
-            'product_description' => isset($product_data['product_description']) ? $product_data['product_description'] : '',
+            'product_description' => isset($product_data['description']) ? $product_data['description'] : '',
             'short' => true,
             'fields_requested' => ['short_description']
-        ];
+        ], $extra_context);
 
         return $this->api->generate_content($agent_id, 'post', $api_data);
     }
@@ -107,11 +107,18 @@ class Build360_AI_Generator {
      * @param string $agent_id The ID of the agent to use
      * @return string|WP_Error Generated meta description or error
      */
-    public function generate_seo_meta_description($product_data, $agent_id) {
+    public function generate_seo_meta_description($product_data, $agent_id, $extra_context = []) {
         if (empty($agent_id)) return new WP_Error('missing_agent_id', __('Agent ID is required for content generation.', 'build360-ai'));
-        
+
         $prompt = $this->build_seo_prompt($product_data);
-        return $this->api->generate_content($agent_id, 'post', ['prompt' => $prompt, 'type' => 'meta_description', 'fields_requested' => ['seo_description']]);
+        $api_data = array_merge([
+            'prompt' => $prompt,
+            'product_title' => isset($product_data['name']) ? $product_data['name'] : '',
+            'product_description' => isset($product_data['description']) ? $product_data['description'] : '',
+            'type' => 'meta_description',
+            'fields_requested' => ['seo_description']
+        ], $extra_context);
+        return $this->api->generate_content($agent_id, 'post', $api_data);
     }
 
     /**
@@ -121,11 +128,18 @@ class Build360_AI_Generator {
      * @param string $agent_id The ID of the agent to use
      * @return string|WP_Error Generated SEO title or error
      */
-    public function generate_seo_title($product_data, $agent_id) {
+    public function generate_seo_title($product_data, $agent_id, $extra_context = []) {
         if (empty($agent_id)) return new WP_Error('missing_agent_id', __('Agent ID is required for content generation.', 'build360-ai'));
 
         $prompt = $this->build_seo_prompt($product_data, true);
-        return $this->api->generate_content($agent_id, 'post', ['prompt' => $prompt, 'type' => 'title', 'fields_requested' => ['seo_title']]);
+        $api_data = array_merge([
+            'prompt' => $prompt,
+            'product_title' => isset($product_data['name']) ? $product_data['name'] : '',
+            'product_description' => isset($product_data['description']) ? $product_data['description'] : '',
+            'type' => 'title',
+            'fields_requested' => ['seo_title']
+        ], $extra_context);
+        return $this->api->generate_content($agent_id, 'post', $api_data);
     }
 
     /**
@@ -135,11 +149,17 @@ class Build360_AI_Generator {
      * @param string $agent_id The ID of the agent to use
      * @return string|WP_Error Generated alt text or error
      */
-    public function generate_image_alt_text($product_data, $agent_id) {
+    public function generate_image_alt_text($product_data, $agent_id, $extra_context = []) {
         if (empty($agent_id)) return new WP_Error('missing_agent_id', __('Agent ID is required for content generation.', 'build360-ai'));
 
         $prompt = $this->build_image_prompt($product_data);
-        return $this->api->generate_content($agent_id, 'post', ['prompt' => $prompt, 'fields_requested' => ['image_alt']]);
+        $api_data = array_merge([
+            'prompt' => $prompt,
+            'product_title' => isset($product_data['name']) ? $product_data['name'] : '',
+            'product_description' => isset($product_data['description']) ? $product_data['description'] : '',
+            'fields_requested' => ['image_alt']
+        ], $extra_context);
+        return $this->api->generate_content($agent_id, 'post', $api_data);
     }
 
     /**
@@ -182,20 +202,44 @@ class Build360_AI_Generator {
             'keywords'    => $keywords
         ];
 
+        // Build extra context for API enrichment (categories, attributes, tags, keywords)
+        $attrs = $product_data['attributes'];
+        $attr_strings = array();
+        if (is_array($attrs)) {
+            foreach ($attrs as $attr_name => $attr_value) {
+                if (is_array($attr_value)) {
+                    $attr_strings[] = $attr_name . ': ' . implode(', ', $attr_value);
+                } else {
+                    $attr_strings[] = $attr_name . ': ' . $attr_value;
+                }
+            }
+        }
+
+        // Get product tags
+        $tags_terms = get_the_terms($product->get_id(), 'product_tag');
+        $tags_str = '';
+        if ($tags_terms && !is_wp_error($tags_terms)) {
+            $tags_str = implode(', ', wp_list_pluck($tags_terms, 'name'));
+        }
+
+        $extra_context = array(
+            'categories' => $product_data['category'],
+            'attributes' => implode('; ', $attr_strings),
+            'tags'       => $tags_str,
+            'keywords'   => !empty($keywords) ? implode(', ', $keywords) : '',
+        );
+
         switch ($field) {
             case 'description':
-                return $this->generate_product_description($product_data, $agent_id);
+                return $this->generate_product_description($product_data, $agent_id, $extra_context);
             case 'short_description':
-                return $this->generate_product_short_description($product_data, $agent_id);
+                return $this->generate_product_short_description($product_data, $agent_id, $extra_context);
             case 'seo_title':
-                return $this->generate_seo_title($product_data, $agent_id);
-            case 'seo_description': // This can map to API's meta_description
-                return $this->generate_seo_meta_description($product_data, $agent_id);
+                return $this->generate_seo_title($product_data, $agent_id, $extra_context);
+            case 'seo_description':
+                return $this->generate_seo_meta_description($product_data, $agent_id, $extra_context);
             case 'image_alt':
-                return $this->generate_image_alt_text($product_data, $agent_id);
-            // Note: 'name' (product title) generation should be handled carefully. 
-            // The API payload uses 'product_title' for context from existing title.
-            // If the intent is to generate a *new* title, the agent prompt must be clear.
+                return $this->generate_image_alt_text($product_data, $agent_id, $extra_context);
             default:
                 return new WP_Error('invalid_field', sprintf(__('Field "%s" is not supported for product content generation with agents.', 'build360-ai'), $field));
         }

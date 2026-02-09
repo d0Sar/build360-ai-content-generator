@@ -44,11 +44,11 @@
                     if (status === 'processing') {
                         self.injectProgressBar();
                         self.startPolling();
-                    } else if (status === 'completed') {
+                    } else if (status === 'completed' || status === 'cancelled') {
                         self.injectProgressBar();
                         self.updateUI(response.data);
                     }
-                    // cancelled or no_job: do nothing
+                    // no_job: do nothing
                 }
             });
         },
@@ -74,6 +74,7 @@
                 '<div class="build360-bulk-actions">' +
                     '<button type="button" class="button build360-bulk-cancel-btn">' + s.cancel + '</button>' +
                     '<button type="button" class="button button-primary build360-bulk-results-btn" style="display:none;">' + s.view_results + '</button>' +
+                    '<button type="button" class="button build360-bulk-dismiss-btn" style="display:none;">' + (s.dismiss || 'Dismiss') + '</button>' +
                 '</div>' +
             '</div>';
 
@@ -97,6 +98,9 @@
             });
             $(document).on('click', '.build360-bulk-results-btn', function() {
                 self.showResults();
+            });
+            $(document).on('click', '.build360-bulk-dismiss-btn', function() {
+                self.dismissJob();
             });
         },
 
@@ -163,11 +167,13 @@
                 $spinner.removeClass('build360-bulk-spin');
                 $wrap.find('.build360-bulk-cancel-btn').hide();
                 $wrap.find('.build360-bulk-results-btn').show();
+                $wrap.find('.build360-bulk-dismiss-btn').show();
                 this.stopPolling();
             } else if (data.status === 'cancelled') {
                 $badge.text(s.cancelled).removeClass('status-processing status-completed').addClass('status-cancelled');
                 $spinner.removeClass('build360-bulk-spin');
                 $wrap.find('.build360-bulk-cancel-btn').hide();
+                $wrap.find('.build360-bulk-dismiss-btn').show();
                 this.stopPolling();
             } else {
                 $badge.text(s.processing).addClass('status-processing');
@@ -260,6 +266,20 @@
             }, function(response) {
                 if (response.success && response.data) {
                     self.renderResultsModal(response.data);
+                }
+            });
+        },
+
+        dismissJob: function() {
+            var self = this;
+            $.post(this.vars.ajax_url, {
+                action: 'build360_ai_bulk_dismiss',
+                nonce: this.vars.nonces.bulk_dismiss
+            }, function(response) {
+                if (response.success) {
+                    $('#build360-ai-bulk-progress').slideUp(300, function() {
+                        $(this).remove();
+                    });
                 }
             });
         },
