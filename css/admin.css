@@ -7,6 +7,20 @@
 }
 
 /* General Layout */
+.wrap[class*="build360"],
+.wrap.build360-ai-agents {
+    box-sizing: border-box;
+    max-width: 100%;
+    padding: 10px 20px 10px 12px;
+}
+
+.wrap[class*="build360"] *,
+.wrap.build360-ai-agents *,
+.wrap[class*="build360"] *::before,
+.wrap[class*="build360"] *::after {
+    box-sizing: border-box;
+}
+
 .app-container {
     max-width: 1200px;
     margin: 20px auto;
@@ -49,7 +63,9 @@
 /* Search Box */
 .search-box {
     position: relative;
-    min-width: 300px;
+    min-width: 0;
+    max-width: 300px;
+    width: 100%;
 }
 
 .search-box input {
@@ -272,7 +288,6 @@
     background: #fff;
     border: 1px solid #dcdcde;
     border-radius: 8px;
-    overflow: hidden;
     transition: all 0.2s ease;
 }
 
@@ -340,6 +355,7 @@
     font-size: 13px;
     color: #646970;
     margin-bottom: 12px;
+    padding: 0 16px;
 }
 
 .agent-description {
@@ -347,13 +363,15 @@
     color: #50575e;
     margin: 0 0 16px;
     line-height: 1.4;
+    padding: 0 16px;
 }
 
 .agent-stats {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 12px;
-    padding: 12px;
+    padding: 12px 16px;
+    margin: 0 16px 16px;
     background: #f6f7f7;
     border-radius: 4px;
 }
@@ -373,6 +391,14 @@
 .stat-label {
     font-size: 12px;
     color: #646970;
+}
+
+.agent-footer {
+    padding: 8px 16px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
 }
 
 .agent-actions {
@@ -470,7 +496,6 @@
     width: 100%;
     max-width: 600px;
     max-height: 90vh;
-    overflow: hidden;
     position: relative;
 }
 
@@ -501,6 +526,12 @@
     padding: 24px;
     overflow-y: auto;
     max-height: calc(90vh - 130px);
+}
+
+/* Allow tooltips to escape modal when shown inline (not as popup) */
+#agent-modal .modal-body {
+    overflow: visible;
+    max-height: none;
 }
 
 .form-row {
@@ -603,6 +634,8 @@
     opacity: 0;
     visibility: hidden;
     transition: all 0.2s ease;
+    z-index: 999999;
+    pointer-events: none;
 }
 
 [data-tooltip]:hover:before {
@@ -650,6 +683,11 @@
     }
 }
 
+/* Activity Log */
+.build360-ai-activity-log-wrap .card-content {
+    overflow-x: auto;
+}
+
 /* Card-like layout for settings sections */
 .build360-ai-card {
     background: #fff;
@@ -667,6 +705,24 @@
     padding-bottom: 12px;
     border-bottom: 1px solid #eeeeee;
     color: #3c434a;
+}
+
+/* Dashboard Grid Layout */
+.build360-ai-dashboard-wrap .grid-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 20px;
+}
+
+.build360-ai-dashboard-wrap .grid-column {
+    min-width: 0; /* Prevent grid blowout */
+}
+
+@media (max-width: 960px) {
+    .build360-ai-dashboard-wrap .grid-container {
+        grid-template-columns: 1fr;
+    }
 }
 
 .build360-ai-section-description {
@@ -693,6 +749,251 @@
 
 .build360-ai-remove-assignment-row {
     margin-left: 5px;
+}
+
+/* Dashboard Card Layout */
+.build360-ai-dashboard-wrap .card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.build360-ai-dashboard-wrap .card-header .dashicons {
+    color: #2271b1;
+}
+
+.build360-ai-dashboard-wrap .action-buttons.vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.build360-ai-dashboard-wrap .action-buttons .button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.build360-ai-dashboard-wrap .activity-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.build360-ai-dashboard-wrap .activity-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 6px 0;
+    border-bottom: 1px solid #f0f0f1;
+}
+
+.build360-ai-dashboard-wrap .activity-list li:last-child {
+    border-bottom: none;
+}
+
+.build360-ai-dashboard-wrap .activity-time {
+    color: #646970;
+    font-size: 12px;
+}
+
+.build360-ai-dashboard-wrap .status-ok {
+    color: #00a32a;
+}
+
+.build360-ai-dashboard-wrap .status-error {
+    color: #d63638;
+}
+
+.build360-ai-dashboard-wrap .stat-number {
+    font-weight: 600;
+    color: #2271b1;
+    font-size: 1.1em;
+}
+
+/* Settings: Connection Status */
+.build360-ai-connection-status {
+    margin-bottom: 16px;
+}
+
+.build360-ai-status-connected {
+    color: #00a32a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+}
+
+.build360-ai-status-disconnected {
+    color: #d63638;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+}
+
+.build360-ai-connection-result {
+    display: none;
+    margin-top: 8px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.build360-ai-connection-result.success {
+    display: block;
+    background: #edfaef;
+    color: #00a32a;
+    border: 1px solid #00a32a;
+}
+
+.build360-ai-connection-result.error {
+    display: block;
+    background: #fcf0f1;
+    color: #d63638;
+    border: 1px solid #d63638;
+}
+
+.build360-ai-test-connection-wrapper {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Settings: Advanced Settings Grid */
+.build360-ai-advanced-settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+@media (max-width: 782px) {
+    .build360-ai-advanced-settings-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.build360-ai-advanced-setting-card {
+    background: #f6f7f7;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+}
+
+.build360-ai-advanced-setting-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: #fff;
+    border-bottom: 1px solid #dcdcde;
+}
+
+.build360-ai-advanced-setting-body {
+    padding: 12px 16px;
+}
+
+/* Settings: Toggle Switch */
+.build360-ai-field-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.build360-ai-field-toggle input[type="checkbox"] {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    appearance: none;
+    -webkit-appearance: none;
+    background: #c3c4c7;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.2s;
+    flex-shrink: 0;
+    margin: 0;
+    border: none;
+}
+
+.build360-ai-field-toggle input[type="checkbox"]:checked {
+    background: #2271b1;
+}
+
+.build360-ai-field-toggle input[type="checkbox"]::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+}
+
+.build360-ai-field-toggle input[type="checkbox"]:checked::before {
+    transform: translateX(16px);
+}
+
+.build360-ai-field-title {
+    font-weight: 600;
+    color: #1d2327;
+    font-size: 14px;
+}
+
+/* Settings: API Details Panel */
+.build360-ai-api-details {
+    display: none;
+    margin-top: 12px;
+    padding: 16px;
+    background: #f6f7f7;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+}
+
+.build360-ai-api-details.active {
+    display: block;
+}
+
+.build360-ai-code-block {
+    margin: 10px 0;
+}
+
+.build360-ai-code-block h5 {
+    margin: 0 0 4px;
+    font-size: 12px;
+    color: #646970;
+    text-transform: uppercase;
+}
+
+.build360-ai-code-block pre {
+    background: #1d2327;
+    color: #e0e0e0;
+    padding: 12px 16px;
+    border-radius: 4px;
+    font-size: 12px;
+    line-height: 1.5;
+    overflow-x: auto;
+    max-width: 100%;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.build360-ai-api-note {
+    font-style: italic;
+    color: #646970;
+    font-size: 12px;
+}
+
+.build360-ai-debug-path code {
+    background: #f0f0f1;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+    word-break: break-all;
 }
 
 /* Modern Button Styles */
@@ -803,6 +1104,17 @@
     margin-right: 4px;
 }
 
+/* Tables: prevent overflow behind sidebar */
+.wrap[class*="build360"] .wp-list-table,
+.wrap[class*="build360"] .form-table {
+    max-width: 100%;
+    table-layout: auto;
+}
+
+#build360-ai-agent-assignments-wrapper {
+    overflow-x: auto;
+}
+
 /* Modern Table Styles (Agent Assignments) */
 .build360-ai-settings-wrap #build360-ai-agent-assignments-table {
     border: 1px solid #e0e0e0;
@@ -851,7 +1163,8 @@
     background-color: #fff;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) inset;
     transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-    min-width: 250px;
+    min-width: 0;
+    max-width: 100%;
     height: 38px;
     box-sizing: border-box;
     line-height: normal;
@@ -928,8 +1241,8 @@
     border-radius: 4px;
     flex: 1;
     /* Allow cards to grow */
-    min-width: 300px;
-    /* Minimum width before wrapping */
+    min-width: 0;
+    /* Prevent flex blowout - wraps at container width */
     display: flex;
     flex-direction: column;
     /* Stack header, body, footer */
@@ -1089,7 +1402,7 @@
 
     .build360-ai-token-card,
     .build360-ai-token-usage-card {
-        min-width: 100%;
+        min-width: 0;
         /* Full width on smaller screens */
     }
 }
@@ -1098,18 +1411,507 @@
     position: fixed;
     top: 0;
     left: 0;
-    z-index: 99;
+    right: 0;
+    bottom: 0;
+    z-index: 100000;
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     align-items: center;
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: 100%;
 }
 
 #build360-ai-review-modal .modal-overlay {
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: 100%;
     position: absolute;
+    top: 0;
+    left: 0;
     background: #00000075;
+}
+
+/* =====================================================
+   Shared Tooltip Styles (data-tooltip + dashicons-editor-help)
+   ===================================================== */
+.build360-tooltip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 4px;
+    color: #646970;
+    cursor: help;
+    position: relative;
+    vertical-align: middle;
+}
+
+.build360-tooltip .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+}
+
+.build360-tooltip[data-tooltip]:before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 8px 12px;
+    background: #1d2327;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.4;
+    border-radius: 4px;
+    white-space: normal;
+    width: max-content;
+    max-width: 280px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    z-index: 999999;
+    pointer-events: none;
+    text-align: left;
+}
+
+.build360-tooltip[data-tooltip]:after {
+    content: '';
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%);
+    border: 4px solid transparent;
+    border-top-color: #1d2327;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    z-index: 999999;
+    pointer-events: none;
+}
+
+.build360-tooltip[data-tooltip]:hover:before,
+.build360-tooltip[data-tooltip]:hover:after {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* =====================================================
+   Bulk Generation Progress Bar
+   ===================================================== */
+.build360-bulk-progress-wrap {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-left: 4px solid #2271b1;
+    border-radius: 4px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.build360-bulk-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.build360-bulk-header strong {
+    flex: 1;
+    font-size: 14px;
+    color: #1d2327;
+}
+
+.build360-bulk-status-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    background: #f0f6fc;
+    color: #2271b1;
+}
+
+.build360-bulk-status-badge.status-completed {
+    background: #edfaef;
+    color: #00a32a;
+}
+
+.build360-bulk-status-badge.status-cancelled {
+    background: #fcf0f1;
+    color: #d63638;
+}
+
+.build360-bulk-bar-container {
+    height: 8px;
+    background: #f0f0f1;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.build360-bulk-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #2271b1, #72aee6);
+    border-radius: 4px;
+    transition: width 0.4s ease;
+}
+
+.build360-bulk-stats {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #646970;
+    margin-bottom: 12px;
+}
+
+.build360-bulk-succeeded {
+    font-weight: 500;
+}
+
+/* Spinning icon */
+.build360-bulk-spin {
+    animation: build360-spin 1.5s linear infinite;
+}
+
+.build360-bulk-spin-small {
+    animation: build360-spin 1.5s linear infinite;
+    font-size: 16px !important;
+    width: 16px !important;
+    height: 16px !important;
+}
+
+@keyframes build360-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Products table */
+.build360-bulk-products-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-bottom: 12px;
+}
+
+.build360-bulk-products-table tr {
+    border-bottom: 1px solid #f0f0f1;
+}
+
+.build360-bulk-products-table tr:last-child {
+    border-bottom: none;
+}
+
+.build360-bulk-products-table td {
+    padding: 6px 8px;
+    vertical-align: middle;
+}
+
+.build360-bulk-products-table .col-status {
+    width: 30px;
+    text-align: center;
+}
+
+.build360-bulk-products-table .col-name {
+    font-weight: 500;
+    color: #1d2327;
+}
+
+.build360-bulk-products-table .col-fields {
+    text-align: right;
+}
+
+.build360-status-ok { color: #00a32a; }
+.build360-status-fail { color: #d63638; }
+
+/* Field badges */
+.build360-field-badge {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    margin-left: 4px;
+    font-weight: 500;
+}
+
+.build360-field-badge.field-pending {
+    background: #f0f0f1;
+    color: #646970;
+}
+
+.build360-field-badge.field-processing {
+    background: #f0f6fc;
+    color: #2271b1;
+}
+
+.build360-field-badge.field-completed {
+    background: #edfaef;
+    color: #00a32a;
+}
+
+.build360-field-badge.field-failed {
+    background: #fcf0f1;
+    color: #d63638;
+}
+
+/* Bulk actions area */
+.build360-bulk-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+/* =====================================================
+   Bulk Results Modal
+   ===================================================== */
+.build360-bulk-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 160000;
+}
+
+.build360-bulk-modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.build360-bulk-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.build360-bulk-modal-content {
+    position: relative;
+    background: #fff;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 700px;
+    max-height: 80vh;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+}
+
+.build360-bulk-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid #dcdcde;
+}
+
+.build360-bulk-modal-header h2 {
+    margin: 0;
+    font-size: 16px;
+    flex: 1;
+}
+
+.build360-bulk-modal-summary {
+    font-size: 13px;
+    color: #646970;
+}
+
+.build360-bulk-modal-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #646970;
+    padding: 0;
+}
+
+.build360-bulk-modal-close:hover {
+    color: #1d2327;
+}
+
+.build360-bulk-modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.build360-bulk-modal-footer {
+    padding: 12px 20px;
+    border-top: 1px solid #dcdcde;
+    text-align: right;
+}
+
+.build360-result-product {
+    padding: 12px;
+    margin-bottom: 12px;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    border-left: 3px solid #00a32a;
+}
+
+.build360-result-product.result-fail {
+    border-left-color: #d63638;
+}
+
+.result-product-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.build360-result-edit {
+    font-size: 12px;
+    text-decoration: none;
+}
+
+.result-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.result-field {
+    font-size: 13px;
+    padding: 4px 8px;
+    border-radius: 3px;
+    background: #f6f7f7;
+}
+
+.result-field.field-ok {
+    color: #1d2327;
+}
+
+.result-field.field-fail {
+    color: #d63638;
+    background: #fcf0f1;
+}
+
+.result-field-label {
+    font-weight: 600;
+}
+
+.result-field-preview {
+    color: #646970;
+}
+
+/* =====================================================
+   Guide Page Styles
+   ===================================================== */
+.build360-guide-wrap {
+    max-width: 800px;
+}
+
+.build360-guide-wrap .build360-ai-card {
+    margin-bottom: 0;
+}
+
+.build360-guide-section {
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    background: #fff;
+}
+
+.build360-guide-section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 20px;
+    cursor: pointer;
+    user-select: none;
+    background: #f6f7f7;
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+
+.build360-guide-section-header:hover {
+    background: #f0f0f1;
+}
+
+.build360-guide-section-header .dashicons {
+    color: #2271b1;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+}
+
+.build360-guide-section-header h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1d2327;
+    flex: 1;
+}
+
+.build360-guide-toggle {
+    color: #646970;
+    transition: transform 0.2s;
+}
+
+.build360-guide-section.open .build360-guide-toggle {
+    transform: rotate(180deg);
+}
+
+.build360-guide-section-body {
+    display: none;
+    padding: 16px 20px;
+    border-top: 1px solid #dcdcde;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #3c434a;
+}
+
+.build360-guide-section.open .build360-guide-section-body {
+    display: block;
+}
+
+.build360-guide-section-body h4 {
+    font-size: 13px;
+    font-weight: 600;
+    margin: 16px 0 8px 0;
+    color: #1d2327;
+}
+
+.build360-guide-section-body h4:first-child {
+    margin-top: 0;
+}
+
+.build360-guide-section-body ol,
+.build360-guide-section-body ul {
+    margin: 8px 0 8px 20px;
+}
+
+.build360-guide-section-body li {
+    margin-bottom: 6px;
+}
+
+.build360-guide-section-body code {
+    background: #f0f0f1;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.build360-guide-section-body .guide-tip {
+    background: #f0f6fc;
+    border-left: 3px solid #2271b1;
+    padding: 10px 14px;
+    border-radius: 3px;
+    margin: 12px 0;
+    font-size: 13px;
+}
+
+.build360-guide-section-body .guide-warning {
+    background: #fcf0f1;
+    border-left: 3px solid #d63638;
+    padding: 10px 14px;
+    border-radius: 3px;
+    margin: 12px 0;
+    font-size: 13px;
 }

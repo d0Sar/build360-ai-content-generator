@@ -44,7 +44,9 @@ wp_nonce_field('build360_ai_generate_content', 'build360_ai_nonce');
     </div>
 
     <div class="content-fields">
-        <h4><?php _e('Generate Content For:', 'build360-ai'); ?></h4>
+        <h4><?php _e('Generate Content For:', 'build360-ai'); ?>
+            <span class="build360-tooltip" data-tooltip="<?php esc_attr_e('Select which product fields to generate. Existing content will be replaced.', 'build360-ai'); ?>"><span class="dashicons dashicons-editor-help"></span></span>
+        </h4>
         <div class="field-grid">
             <?php foreach ($content_types['product']['fields'] as $field => $config): ?>
                 <label class="field-label">
@@ -59,9 +61,7 @@ wp_nonce_field('build360_ai_generate_content', 'build360_ai_nonce');
     <div class="keywords-section">
         <label for="build360_ai_keywords">
             <?php _e('Keywords (comma-separated):', 'build360-ai'); ?>
-            <span class="tooltip" data-tooltip="<?php esc_attr_e('Add relevant keywords to help generate more focused content.', 'build360-ai'); ?>">
-                <i class="fas fa-info-circle"></i>
-            </span>
+            <span class="build360-tooltip" data-tooltip="<?php esc_attr_e('Add relevant keywords to help generate more focused content.', 'build360-ai'); ?>"><span class="dashicons dashicons-editor-help"></span></span>
         </label>
         <div class="input-wrapper">
             <input type="text" id="build360_ai_keywords" name="build360_ai_keywords" value="<?php echo esc_attr($categories); ?>" placeholder="<?php esc_attr_e('e.g., modern, stylish, durable', 'build360-ai'); ?>" />
@@ -73,6 +73,7 @@ wp_nonce_field('build360_ai_generate_content', 'build360_ai_nonce');
             <i class="fas fa-magic"></i>
             <span class="button-text"><?php _e('Generate Content', 'build360-ai'); ?></span>
         </button>
+        <span class="build360-tooltip" data-tooltip="<?php esc_attr_e('Generates AI content for selected fields. You\'ll review before applying.', 'build360-ai'); ?>"><span class="dashicons dashicons-editor-help"></span></span>
         <div class="spinner"></div>
     </div>
 
@@ -308,31 +309,6 @@ wp_nonce_field('build360_ai_generate_content', 'build360_ai_nonce');
     color: #842029;
     background-color: #f8d7da;
     border: 1px solid #f5c2c7;
-}
-
-.tooltip {
-    display: inline-block;
-    margin-left: 4px;
-    color: #6c757d;
-    cursor: help;
-    position: relative;
-}
-
-.tooltip:hover:after {
-    content: attr(data-tooltip);
-    position: absolute;
-    bottom: 125%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 200px;
-    padding: 8px;
-    border-radius: 4px;
-    background-color: #333;
-    color: #fff;
-    font-size: 12px;
-    font-weight: normal;
-    z-index: 100;
-    text-align: center;
 }
 
 /* Responsive styles */

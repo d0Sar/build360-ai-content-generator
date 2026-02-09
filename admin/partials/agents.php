@@ -105,6 +105,7 @@ $categories = array(
                     <label for="agent-name">
                         <?php _e('Agent Name', 'build360-ai'); ?>
                         <span class="required">*</span>
+                        <span class="build360-tooltip" data-tooltip="<?php esc_attr_e('A descriptive name for this agent, e.g. \'Product Descriptions\' or \'Blog SEO\'.', 'build360-ai'); ?>"><span class="dashicons dashicons-editor-help"></span></span>
                     </label>
                     <input type="text" id="agent-name" name="name" required>
                 </div>
@@ -113,6 +114,7 @@ $categories = array(
                     <label for="agent-model">
                         <?php _e('AI Model', 'build360-ai'); ?>
                         <span class="required">*</span>
+                        <span class="build360-tooltip" data-tooltip="<?php esc_attr_e('The AI model to use. GPT-4o is recommended for best quality.', 'build360-ai'); ?>"><span class="dashicons dashicons-editor-help"></span></span>
                     </label>
                     <select id="agent-model" name="model" required>
                         <?php foreach ($models as $key => $label) : ?>
@@ -125,6 +127,7 @@ $categories = array(
                     <label for="agent-description">
                         <?php _e('Description', 'build360-ai'); ?>
                         <span class="required">*</span>
+                        <span class="build360-tooltip" data-tooltip="<?php esc_attr_e('Brief description of what this agent does. For your reference only.', 'build360-ai'); ?>"><span class="dashicons dashicons-editor-help"></span></span>
                     </label>
                     <textarea id="agent-description" name="description" required></textarea>
                 </div>
@@ -133,9 +136,7 @@ $categories = array(
                     <label for="agent-prompt">
                         <?php _e('System Prompt', 'build360-ai'); ?>
                         <span class="required">*</span>
-                        <span class="tooltip" data-tooltip="<?php esc_attr_e('Instructions that define how the AI agent should behave and respond.', 'build360-ai'); ?>">
-                            <span class="dashicons dashicons-editor-help"></span>
-                        </span>
+                        <span class="build360-tooltip" data-tooltip="<?php esc_attr_e('Instructions that define how the AI agent should behave and respond.', 'build360-ai'); ?>"><span class="dashicons dashicons-editor-help"></span></span>
                     </label>
                     <textarea id="agent-prompt" name="system_prompt" required></textarea>
                 </div>
@@ -149,8 +150,8 @@ $categories = array(
 </div>
 
 <style>
-/* Modal Styles */
-.build360-ai-modal {
+/* Agent-specific modal/form overrides (base styles in admin.css) */
+.build360-ai-agents .build360-ai-modal {
     display: none;
     position: fixed;
     top: 0;
@@ -160,7 +161,7 @@ $categories = array(
     z-index: 100000;
 }
 
-.modal-overlay {
+.build360-ai-agents .modal-overlay {
     position: absolute;
     top: 0;
     left: 0;
@@ -170,7 +171,7 @@ $categories = array(
     z-index: 100001;
 }
 
-.modal-content {
+.build360-ai-agents .modal-content {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -185,150 +186,8 @@ $categories = array(
     z-index: 100002;
 }
 
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px 24px;
-    border-bottom: 1px solid #ddd;
-}
-
-.modal-header h2 {
-    margin: 0;
-    font-size: 1.3em;
-}
-
-.close-modal {
-    padding: 0;
-    border: none;
-    background: none;
-    color: #666;
-    cursor: pointer;
-}
-
-.close-modal:hover {
-    color: #000;
-}
-
-.modal-body {
-    padding: 24px;
-}
-
-.modal-footer {
-    padding: 16px 24px;
-    border-top: 1px solid #ddd;
-    text-align: right;
-}
-
-.modal-footer .button {
-    margin-left: 10px;
-}
-
-/* Form Styles */
-.form-group {
-    margin-bottom: 20px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 600;
-}
-
-.form-group input[type="text"],
-.form-group select,
-.form-group textarea {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-}
-
-.form-group textarea {
-    min-height: 100px;
-}
-
-.required {
-    color: #d63638;
-    margin-left: 4px;
-}
-
-.tooltip {
-    display: inline-block;
-    margin-left: 4px;
-    color: #666;
-    cursor: help;
-}
-
-/* Agent Card Styles */
-.agents-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
-    margin-top: 20px;
-}
-
-.agent-card {
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    padding: 16px;
-}
-
-.agent-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 10px;
-}
-
-.agent-header h3 {
-    margin: 0;
-}
-
-.agent-actions {
-    display: flex;
-    gap: 8px;
-}
-
-.agent-actions button {
-    padding: 0;
-    border: none;
-    background: none;
-    color: #666;
-    cursor: pointer;
-}
-
-.agent-actions button:hover {
-    color: #000;
-}
-
-.agent-model {
-    color: #666;
-    font-size: 0.9em;
-    margin-bottom: 8px;
-}
-
-.agent-description {
-    margin-bottom: 16px;
-    color: #333;
-}
-
-.agent-stats {
-    display: flex;
-    gap: 16px;
-    color: #666;
-    font-size: 0.9em;
-}
-
-.agent-stats .stat {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-/* Token Info Styles */
-.token-info {
+/* Token Info (agents page) */
+.build360-ai-agents .token-info {
     background: #fff;
     border: 1px solid #ddd;
     border-radius: 4px;
@@ -336,13 +195,13 @@ $categories = array(
     margin: 20px 0;
 }
 
-.token-count {
+.build360-ai-agents .token-count {
     font-size: 1.2em;
     font-weight: 600;
     margin-right: 8px;
 }
 
-.progress-bar-container {
+.build360-ai-agents .progress-bar-container {
     margin-top: 8px;
     background: #f0f0f1;
     border-radius: 4px;
@@ -350,13 +209,12 @@ $categories = array(
     overflow: hidden;
 }
 
-.progress-bar {
+.build360-ai-agents .progress-bar {
     height: 100%;
     background: #2271b1;
     transition: width 0.3s ease;
 }
 
-/* Form Error Styles */
 .form-error {
     color: #d63638;
     display: block;

@@ -103,7 +103,9 @@ $products_enhanced_count = get_option('build360_ai_products_enhanced', 0);
                                 <?php endif; ?>
                             </div>
                             <hr>
-                            <h4><?php _e('Token Balance', 'build360-ai'); ?></h4>
+                            <h4><?php _e('Token Balance', 'build360-ai'); ?>
+                                <span class="build360-tooltip" data-tooltip="<?php esc_attr_e('AI tokens are consumed with each generation. Purchase more from your Build360.gr account.', 'build360-ai'); ?>"><span class="dashicons dashicons-editor-help"></span></span>
+                            </h4>
                             <?php if (is_wp_error($token_data)) : ?>
                                 <p class="status-error"><span class="dashicons dashicons-warning"></span> <?php esc_html_e('Error fetching token balance:', 'build360-ai'); ?> <?php echo esc_html($token_data->get_error_message()); ?></p>
                             <?php elseif ($api_key_saved && isset($token_data['available'])) : ?>
@@ -125,8 +127,12 @@ $products_enhanced_count = get_option('build360_ai_products_enhanced', 0);
                     <div class="build360-ai-card">
                         <h2 class="card-header"><span class="dashicons dashicons-chart-line"></span> <?php _e('Site Statistics', 'build360-ai'); ?></h2>
                         <div class="card-content">
-                            <p><strong><?php _e('Content Generated:', 'build360-ai'); ?></strong> <span class="stat-number"><?php echo esc_html(number_format_i18n($content_generated_count)); ?></span> <?php _e('items', 'build360-ai'); ?></p>
-                            <p><strong><?php _e('Products Enhanced:', 'build360-ai'); ?></strong> <span class="stat-number"><?php echo esc_html(number_format_i18n($products_enhanced_count)); ?></span> <?php _e('products', 'build360-ai'); ?></p>
+                            <p><strong><?php _e('Content Generated:', 'build360-ai'); ?></strong> <span class="stat-number"><?php echo esc_html(number_format_i18n($content_generated_count)); ?></span> <?php _e('items', 'build360-ai'); ?>
+                                <span class="build360-tooltip" data-tooltip="<?php esc_attr_e('Total number of content fields generated across all products.', 'build360-ai'); ?>"><span class="dashicons dashicons-editor-help"></span></span>
+                            </p>
+                            <p><strong><?php _e('Products Enhanced:', 'build360-ai'); ?></strong> <span class="stat-number"><?php echo esc_html(number_format_i18n($products_enhanced_count)); ?></span> <?php _e('products', 'build360-ai'); ?>
+                                <span class="build360-tooltip" data-tooltip="<?php esc_attr_e('Number of products that have received AI-generated content.', 'build360-ai'); ?>"><span class="dashicons dashicons-editor-help"></span></span>
+                            </p>
                              <p class="description"><?php _e('These are counts of generation events initiated by this plugin on your site.', 'build360-ai'); ?></p>
             </div>
         </div>

@@ -48,6 +48,10 @@ public function init() {
 
     // Handle single product generation
     add_action('admin_init', array($this, 'handle_single_generation'));
+
+    // Register Action Scheduler hooks for background bulk processing
+    add_action('build360_ai_process_single_product', array($this, 'process_single_product_background'), 10, 2);
+    add_action('build360_ai_cleanup_bulk_job', array($this, 'cleanup_bulk_job'), 10, 1);
 }
 
 /**
@@ -175,11 +179,10 @@ public function register_bulk_actions($bulk_actions) {
 
 /**
  * Add an entry to the recent activity log for this class's context.
- * Note: This is a simplified version. For a unified log, consider a shared service.
  */
 private function add_bulk_action_activity($activity_message) {
     if (empty(trim($activity_message))) return;
-    
+
     $recent_activity = get_option('build360_ai_recent_activity', array());
     if (!is_array($recent_activity)) {
         $recent_activity = array();
@@ -189,25 +192,21 @@ private function add_bulk_action_activity($activity_message) {
         'time' => current_time('mysql'),
         'message' => strval($activity_message)
     ));
-    $recent_activity = array_slice($recent_activity, 0, 10); // Keep last 10
+    $recent_activity = array_slice($recent_activity, 0, 10);
     update_option('build360_ai_recent_activity', $recent_activity);
 }
 
 /**
- * Handle bulk actions
+ * Handle bulk actions - creates background job via Action Scheduler
  */
 public function handle_bulk_actions($redirect_to, $doaction, $post_ids) {
-    // Diagnostic log entry to observe the exact bulk action slug WordPress passes to this handler.
     $this->add_bulk_action_activity( sprintf( __( 'handle_bulk_actions fired – received action "%s" for %d products.', 'build360-ai' ), $doaction, count( (array) $post_ids ) ) );
 
     if ($doaction !== 'build360_ai_generate') {
         return $redirect_to;
     }
 
-    $processed_count = 0;
-    // Log the fact that the bulk action handler has been triggered. Helpful for debugging when nothing seems to happen.
-    $this->add_bulk_action_activity( sprintf( __( 'Bulk action initiated for %d products.', 'build360-ai' ), count( $post_ids ) ) );
-    $generator = new Build360_AI_Generator();
+    // Verify we have an agent assigned to products
     $agent_assignments = get_option('build360_ai_agent_assignments', array());
     $product_agent_id = null;
 
@@ -219,133 +218,374 @@ public function handle_bulk_actions($redirect_to, $doaction, $post_ids) {
     }
 
     if (empty($product_agent_id)) {
-        add_action('admin_notices', function() {
-            echo '<div class="notice notice-error"><p>' . esc_html__('Bulk content generation failed: No AI Agent is assigned to the "product" content type. Please check plugin settings.', 'build360-ai') . '</p></div>';
-        });
-        // Log the failure so that it is visible in the Activity Log even when no agent is assigned.
         $this->add_bulk_action_activity(__('Bulk content generation failed: No AI Agent is assigned to the "product" content type. Please check plugin settings.', 'build360-ai'));
+        $redirect_to = add_query_arg('build360_ai_error', 'no_agent', $redirect_to);
         return $redirect_to;
     }
 
-    $generated_for_product_log = array(); // To log what was done for each product
+    // Create job record
+    $job_id = 'bulk_' . wp_generate_uuid4();
+    $fields = array('description', 'short_description', 'seo_title', 'seo_description');
 
+    $products_data = array();
     foreach ($post_ids as $post_id) {
         $product = wc_get_product($post_id);
         if (!$product) {
             continue;
         }
-
-        try {
-            $fields_to_generate_bulk = array('description', 'short_description'); // Fields to update in bulk
-            $fields_updated_for_this_product = array();
-            $product_name_for_log = $product->get_name();
-            if (!is_string($product_name_for_log) || empty(trim($product_name_for_log))) {
-                 $product_name_for_log = __('(Unknown Product)', 'build360-ai');
-            }
-
-            foreach ($fields_to_generate_bulk as $field) {
-                // It may return:
-                // 1) A string with the generated content
-                // 2) An array like { "success": true, "data": { "description": "..." } }
-                // 3) An array directly mapping field keys
-                $api_response = $generator->generate_product_content_with_agent($product, $field, $product_agent_id, array());
-
-                $actual_content_to_apply = null;
-
-                if (is_wp_error($api_response)) {
-                    error_log('[Build360 AI Bulk] WP_Error generating field ' . $field . ' for product ID ' . $post_id . ': ' . $api_response->get_error_message());
-                    continue;
-                }
-
-                if (is_string($api_response)) {
-                    // Simple string response = the generated content
-                    $actual_content_to_apply = $api_response;
-                } elseif (is_array($api_response)) {
-                    // Check for wrapped structure with success => true
-                    if (isset($api_response['success']) && $api_response['success'] === true && isset($api_response['data']) && is_array($api_response['data'])) {
-                        $content_map = $api_response['data'];
-                    } else {
-                        // Maybe the whole array *is* the map already
-                        $content_map = $api_response;
-                    }
-
-                    // Try to pull the desired field from the map
-                    if (isset($content_map[$field])) {
-                        $actual_content_to_apply = $content_map[$field];
-                    } elseif ($field === 'description') {
-                        if (isset($content_map['content'])) { $actual_content_to_apply = $content_map['content']; }
-                        elseif (isset($content_map['full_description'])) { $actual_content_to_apply = $content_map['full_description']; }
-                        elseif (isset($content_map['description'])) { $actual_content_to_apply = $content_map['description']; }
-                    } elseif ($field === 'short_description') {
-                        if (isset($content_map['short_description'])) { $actual_content_to_apply = $content_map['short_description']; }
-                        elseif (isset($content_map['shortDescription'])) { $actual_content_to_apply = $content_map['shortDescription']; }
-                    }
-                }
-
-                if ($actual_content_to_apply === null) {
-                    error_log('[Build360 AI Bulk] Could not extract content for field ' . $field . ' from API response for product ID ' . $post_id . '. Response: ' . print_r($api_response, true));
-                }
-
-                if ($actual_content_to_apply !== null) {
-                    if (is_array($actual_content_to_apply)) {
-                        error_log('[Build360 AI Bulk] API returned an array for field ' . $field . ' for product ID ' . $post_id . '. Skipping field.');
-                        continue;
-                    }
-
-                    $sanitized_content = wp_kses_post(strval($actual_content_to_apply));
-
-                    switch ($field) {
-                        case 'description':
-                            $product->set_description($sanitized_content);
-                            $fields_updated_for_this_product[] = __('description', 'build360-ai');
-                            break;
-                        case 'short_description':
-                            $product->set_short_description($sanitized_content);
-                            $fields_updated_for_this_product[] = __('short description', 'build360-ai');
-                            break;
-                    }
-                }
-            }
-
-            if (!empty($fields_updated_for_this_product)) {
-                $product->save();
-                update_post_meta($post_id, '_build360_ai_last_generated', current_time('mysql'));
-                $processed_count++;
-
-                $activity_message = sprintf(
-                    __('Bulk AI content generated for product: %s (ID: %d). Fields: %s', 'build360-ai'),
-                    $product_name_for_log,
-                    $post_id,
-                    implode(', ', $fields_updated_for_this_product)
-                );
-                $this->add_bulk_action_activity($activity_message);
-
-                $current_generated_option = get_option('build360_ai_content_generated', 0);
-                update_option('build360_ai_content_generated', $current_generated_option + count($fields_updated_for_this_product));
-            }
-
-        } catch (Exception $e) {
-            error_log(sprintf(
-                'Build360 AI Bulk Action Exception: Failed for product %d: %s',
-                $post_id,
-                $e->getMessage()
-            ));
+        $products_data[$post_id] = array(
+            'name' => $product->get_name(),
+            'status' => 'pending',
+            'fields' => array(),
+        );
+        foreach ($fields as $field) {
+            $products_data[$post_id]['fields'][$field] = array(
+                'status' => 'pending',
+                'preview' => '',
+            );
         }
     }
 
-    if ($processed_count > 0) {
-         $current_products_enhanced = get_option('build360_ai_products_enhanced', 0);
-         update_option('build360_ai_products_enhanced', $current_products_enhanced + $processed_count); 
+    if (empty($products_data)) {
+        $redirect_to = add_query_arg('build360_ai_error', 'no_valid_products', $redirect_to);
+        return $redirect_to;
     }
 
-    $redirect_to = add_query_arg('build360_ai_processed', $processed_count, $redirect_to);
+    $job_data = array(
+        'job_id' => $job_id,
+        'status' => 'processing',
+        'user_id' => get_current_user_id(),
+        'total' => count($products_data),
+        'completed' => 0,
+        'succeeded' => 0,
+        'failed' => 0,
+        'fields' => $fields,
+        'agent_id' => $product_agent_id,
+        'products' => $products_data,
+        'created_at' => current_time('mysql'),
+    );
+
+    update_option('build360_ai_bulk_job_' . $job_id, $job_data, false);
+
+    // Store active job ID for this user so the JS can find it
+    update_user_meta(get_current_user_id(), '_build360_ai_active_bulk_job', $job_id);
+
+    $this->add_bulk_action_activity( sprintf( __( 'Bulk generation job %s started for %d products.', 'build360-ai' ), $job_id, count($products_data) ) );
+
+    // Schedule one Action Scheduler task per product with 2-second stagger
+    $delay = 0;
+    foreach (array_keys($products_data) as $post_id) {
+        if (function_exists('as_schedule_single_action')) {
+            as_schedule_single_action(
+                time() + $delay,
+                'build360_ai_process_single_product',
+                array($job_id, $post_id),
+                'build360-ai'
+            );
+        }
+        $delay += 2; // 2-second stagger between products
+    }
+
+    // Schedule cleanup after 1 hour
+    if (function_exists('as_schedule_single_action')) {
+        as_schedule_single_action(
+            time() + 3600,
+            'build360_ai_cleanup_bulk_job',
+            array($job_id),
+            'build360-ai'
+        );
+    }
+
+    $redirect_to = add_query_arg('build360_ai_bulk_job', $job_id, $redirect_to);
     return $redirect_to;
+}
+
+/**
+ * Action Scheduler callback: process a single product in the background
+ *
+ * @param string $job_id The bulk job identifier
+ * @param int $product_id The WooCommerce product ID
+ */
+public function process_single_product_background($job_id, $product_id) {
+    $job_data = get_option('build360_ai_bulk_job_' . $job_id);
+    if (!$job_data || !is_array($job_data)) {
+        error_log('[Build360 AI Bulk] Job data not found for job ' . $job_id);
+        return;
+    }
+
+    // Bail if job was cancelled
+    if ($job_data['status'] === 'cancelled') {
+        return;
+    }
+
+    $product = wc_get_product($product_id);
+    if (!$product) {
+        $this->update_product_job_status($job_id, $product_id, 'failed');
+        $this->maybe_finalize_job($job_id);
+        return;
+    }
+
+    // Mark product as processing
+    $job_data = get_option('build360_ai_bulk_job_' . $job_id);
+    if (isset($job_data['products'][$product_id])) {
+        $job_data['products'][$product_id]['status'] = 'processing';
+        update_option('build360_ai_bulk_job_' . $job_id, $job_data, false);
+    }
+
+    $generator = new Build360_AI_Generator();
+    $agent_id = $job_data['agent_id'];
+    $fields = $job_data['fields'];
+    $fields_succeeded = 0;
+    $product_failed = false;
+
+    foreach ($fields as $field) {
+        // Re-read job data to check for cancellation between fields
+        $current_job = get_option('build360_ai_bulk_job_' . $job_id);
+        if ($current_job && $current_job['status'] === 'cancelled') {
+            return;
+        }
+
+        try {
+            $api_response = $generator->generate_product_content_with_agent($product, $field, $agent_id, array());
+            $content = $this->extract_content_from_response($api_response, $field);
+
+            if ($content !== null) {
+                $this->apply_field_content($product, $product_id, $field, $content);
+
+                // Update job data with field success
+                $job_data = get_option('build360_ai_bulk_job_' . $job_id);
+                if (isset($job_data['products'][$product_id]['fields'][$field])) {
+                    $job_data['products'][$product_id]['fields'][$field]['status'] = 'completed';
+                    $job_data['products'][$product_id]['fields'][$field]['preview'] = mb_substr(wp_strip_all_tags($content), 0, 100);
+                    update_option('build360_ai_bulk_job_' . $job_id, $job_data, false);
+                }
+                $fields_succeeded++;
+            } else {
+                $job_data = get_option('build360_ai_bulk_job_' . $job_id);
+                if (isset($job_data['products'][$product_id]['fields'][$field])) {
+                    $job_data['products'][$product_id]['fields'][$field]['status'] = 'failed';
+                    update_option('build360_ai_bulk_job_' . $job_id, $job_data, false);
+                }
+            }
+        } catch (Exception $e) {
+            error_log('[Build360 AI Bulk] Exception for product ' . $product_id . ' field ' . $field . ': ' . $e->getMessage());
+            $job_data = get_option('build360_ai_bulk_job_' . $job_id);
+            if (isset($job_data['products'][$product_id]['fields'][$field])) {
+                $job_data['products'][$product_id]['fields'][$field]['status'] = 'failed';
+                update_option('build360_ai_bulk_job_' . $job_id, $job_data, false);
+            }
+        }
+    }
+
+    // Save product after all fields processed
+    if ($fields_succeeded > 0) {
+        $product->save();
+        update_post_meta($product_id, '_build360_ai_last_generated', current_time('mysql'));
+
+        // Track usage stats
+        $current_generated = get_option('build360_ai_content_generated', 0);
+        update_option('build360_ai_content_generated', $current_generated + $fields_succeeded);
+
+        $current_products = get_option('build360_ai_products_enhanced', 0);
+        update_option('build360_ai_products_enhanced', $current_products + 1);
+
+        $this->add_bulk_action_activity(sprintf(
+            __('Bulk AI content generated for product: %s (ID: %d). %d fields updated.', 'build360-ai'),
+            $product->get_name(),
+            $product_id,
+            $fields_succeeded
+        ));
+    }
+
+    // Update product status in job
+    $final_status = $fields_succeeded > 0 ? 'completed' : 'failed';
+    $this->update_product_job_status($job_id, $product_id, $final_status);
+    $this->maybe_finalize_job($job_id);
+}
+
+/**
+ * Extract content from API response (various formats)
+ *
+ * @param mixed $api_response
+ * @param string $field
+ * @return string|null
+ */
+private function extract_content_from_response($api_response, $field) {
+    if (is_wp_error($api_response)) {
+        error_log('[Build360 AI Bulk] WP_Error for field ' . $field . ': ' . $api_response->get_error_message());
+        return null;
+    }
+
+    if (is_string($api_response)) {
+        return $api_response;
+    }
+
+    if (is_array($api_response)) {
+        $content_map = $api_response;
+        if (isset($api_response['success']) && $api_response['success'] === true && isset($api_response['data']) && is_array($api_response['data'])) {
+            $content_map = $api_response['data'];
+        }
+
+        // Direct field match
+        if (isset($content_map[$field]) && is_string($content_map[$field])) {
+            return $content_map[$field];
+        }
+
+        // Alternative keys by field type
+        $alt_keys = array(
+            'description' => array('content', 'full_description', 'description'),
+            'short_description' => array('short_description', 'shortDescription', 'excerpt'),
+            'seo_title' => array('seo_title', 'meta_title', 'title'),
+            'seo_description' => array('seo_description', 'meta_description', 'metadesc'),
+        );
+
+        if (isset($alt_keys[$field])) {
+            foreach ($alt_keys[$field] as $alt_key) {
+                if (isset($content_map[$alt_key]) && is_string($content_map[$alt_key])) {
+                    return $content_map[$alt_key];
+                }
+            }
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Apply generated content to a product field
+ *
+ * @param WC_Product $product
+ * @param int $product_id
+ * @param string $field
+ * @param string $content
+ */
+private function apply_field_content($product, $product_id, $field, $content) {
+    switch ($field) {
+        case 'description':
+            $product->set_description(wp_kses_post($content));
+            break;
+        case 'short_description':
+            $product->set_short_description(wp_kses_post($content));
+            break;
+        case 'seo_title':
+            $sanitized = sanitize_text_field($content);
+            update_post_meta($product_id, '_yoast_wpseo_title', $sanitized);
+            update_post_meta($product_id, 'rank_math_title', $sanitized);
+            update_post_meta($product_id, '_seopress_titles_title', $sanitized);
+            update_post_meta($product_id, '_aioseo_title', $sanitized);
+            break;
+        case 'seo_description':
+            $sanitized = wp_kses_post($content);
+            update_post_meta($product_id, '_yoast_wpseo_metadesc', $sanitized);
+            update_post_meta($product_id, 'rank_math_description', $sanitized);
+            update_post_meta($product_id, '_seopress_titles_desc', $sanitized);
+            update_post_meta($product_id, '_aioseo_description', $sanitized);
+            break;
+        case 'image_alt':
+            if ($product->get_image_id()) {
+                update_post_meta($product->get_image_id(), '_wp_attachment_image_alt', sanitize_text_field($content));
+            }
+            break;
+    }
+}
+
+/**
+ * Update a single product's status within a bulk job
+ *
+ * @param string $job_id
+ * @param int $product_id
+ * @param string $status completed|failed
+ */
+private function update_product_job_status($job_id, $product_id, $status) {
+    $job_data = get_option('build360_ai_bulk_job_' . $job_id);
+    if (!$job_data || !is_array($job_data)) {
+        return;
+    }
+
+    if (isset($job_data['products'][$product_id])) {
+        $job_data['products'][$product_id]['status'] = $status;
+    }
+
+    $job_data['completed']++;
+    if ($status === 'completed') {
+        $job_data['succeeded']++;
+    } else {
+        $job_data['failed']++;
+    }
+
+    update_option('build360_ai_bulk_job_' . $job_id, $job_data, false);
+}
+
+/**
+ * Check if all products in a job are done and finalize
+ *
+ * @param string $job_id
+ */
+private function maybe_finalize_job($job_id) {
+    $job_data = get_option('build360_ai_bulk_job_' . $job_id);
+    if (!$job_data || !is_array($job_data)) {
+        return;
+    }
+
+    if ($job_data['completed'] >= $job_data['total']) {
+        $job_data['status'] = 'completed';
+        $job_data['completed_at'] = current_time('mysql');
+        update_option('build360_ai_bulk_job_' . $job_id, $job_data, false);
+
+        $this->add_bulk_action_activity(sprintf(
+            __('Bulk generation job completed: %d succeeded, %d failed out of %d products.', 'build360-ai'),
+            $job_data['succeeded'],
+            $job_data['failed'],
+            $job_data['total']
+        ));
+    }
+}
+
+/**
+ * Cleanup bulk job data (Action Scheduler callback)
+ *
+ * @param string $job_id
+ */
+public function cleanup_bulk_job($job_id) {
+    delete_option('build360_ai_bulk_job_' . $job_id);
+
+    // Clear user meta if this was their active job
+    $users = get_users(array(
+        'meta_key' => '_build360_ai_active_bulk_job',
+        'meta_value' => $job_id,
+    ));
+    foreach ($users as $user) {
+        delete_user_meta($user->ID, '_build360_ai_active_bulk_job');
+    }
 }
 
 /**
  * Display admin notice for bulk action results
  */
 public function bulk_action_admin_notice() {
+    if (!empty($_REQUEST['build360_ai_bulk_job'])) {
+        $job_id = sanitize_text_field($_REQUEST['build360_ai_bulk_job']);
+        echo '<div class="notice notice-info" id="build360-ai-bulk-notice"><p>';
+        echo esc_html__('Build360 AI bulk content generation has been started in the background. You can track progress below.', 'build360-ai');
+        echo '</p></div>';
+    }
+
+    if (!empty($_REQUEST['build360_ai_error'])) {
+        $error = sanitize_text_field($_REQUEST['build360_ai_error']);
+        $message = '';
+        switch ($error) {
+            case 'no_agent':
+                $message = __('Bulk content generation failed: No AI Agent is assigned to the "product" content type. Please check plugin settings.', 'build360-ai');
+                break;
+            case 'no_valid_products':
+                $message = __('Bulk content generation failed: No valid products were found in the selection.', 'build360-ai');
+                break;
+        }
+        if ($message) {
+            echo '<div class="notice notice-error"><p>' . esc_html($message) . '</p></div>';
+        }
+    }
+
     if (!empty($_REQUEST['build360_ai_processed'])) {
         $processed = intval($_REQUEST['build360_ai_processed']);
         printf(

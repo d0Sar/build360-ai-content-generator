@@ -86,6 +86,15 @@ class Build360_AI_Admin {
             'build360-ai-activity-log',
             array($this, 'render_activity_log_page')
         );
+
+        add_submenu_page(
+            'build360-ai',
+            __('Guide', 'build360-ai'),
+            __('Guide', 'build360-ai'),
+            'manage_options',
+            'build360-ai-guide',
+            array($this, 'render_guide_page')
+        );
     }
 
     /**
@@ -122,12 +131,13 @@ class Build360_AI_Admin {
      * Enqueue admin assets
      */
     public function enqueue_assets($hook_suffix) {
-        // Check if we are on a product edit page or a plugin page
+        // Check if we are on a product edit page, product list page, or a plugin page
         $screen = get_current_screen();
         $is_product_edit_page = ($screen && $screen->post_type === 'product' && ($hook_suffix === 'post.php' || $hook_suffix === 'post-new.php'));
+        $is_product_list_page = ($screen && $screen->post_type === 'product' && $hook_suffix === 'edit.php');
         $is_plugin_page = (strpos($hook_suffix, 'build360-ai') !== false);
 
-        if (!$is_product_edit_page && !$is_plugin_page) {
+        if (!$is_product_edit_page && !$is_product_list_page && !$is_plugin_page) {
             return;
         }
 
@@ -285,6 +295,50 @@ class Build360_AI_Admin {
                 );
             }
         }
+
+        // Enqueue bulk generation JS on product list page
+        if ($is_product_list_page) {
+            $active_job_id = get_user_meta(get_current_user_id(), '_build360_ai_active_bulk_job', true);
+
+            wp_enqueue_script(
+                'build360-ai-bulk',
+                BUILD360_AI_PLUGIN_URL . 'js/build360-ai-bulk.js',
+                array('jquery'),
+                BUILD360_AI_VERSION,
+                true
+            );
+
+            wp_localize_script('build360-ai-bulk', 'build360_ai_bulk_vars', array(
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'active_job_id' => $active_job_id ? $active_job_id : '',
+                'nonces' => array(
+                    'bulk_progress' => wp_create_nonce('build360_ai_bulk_progress_nonce'),
+                    'bulk_results' => wp_create_nonce('build360_ai_bulk_results_nonce'),
+                    'bulk_cancel' => wp_create_nonce('build360_ai_bulk_cancel_nonce'),
+                ),
+                'strings' => array(
+                    'processing' => __('Processing...', 'build360-ai'),
+                    'completed' => __('Completed', 'build360-ai'),
+                    'failed' => __('Failed', 'build360-ai'),
+                    'cancelled' => __('Cancelled', 'build360-ai'),
+                    'pending' => __('Pending', 'build360-ai'),
+                    'cancel_confirm' => __('Are you sure you want to cancel this bulk generation job?', 'build360-ai'),
+                    'progress_title' => __('Build360 AI - Bulk Content Generation', 'build360-ai'),
+                    'view_results' => __('View Results', 'build360-ai'),
+                    'cancel' => __('Cancel', 'build360-ai'),
+                    'close' => __('Close', 'build360-ai'),
+                    'description' => __('Description', 'build360-ai'),
+                    'short_description' => __('Short Description', 'build360-ai'),
+                    'seo_title' => __('SEO Title', 'build360-ai'),
+                    'seo_description' => __('SEO Description', 'build360-ai'),
+                    'products_processed' => __('products processed', 'build360-ai'),
+                    'succeeded' => __('succeeded', 'build360-ai'),
+                    'of' => __('of', 'build360-ai'),
+                    'results_title' => __('Bulk Generation Results', 'build360-ai'),
+                    'edit' => __('Edit', 'build360-ai'),
+                ),
+            ));
+        }
     }
 
     /**
@@ -431,6 +485,13 @@ class Build360_AI_Admin {
      */
     public function render_activity_log_page() {
         require_once BUILD360_AI_PLUGIN_DIR . 'admin/partials/activity-log.php';
+    }
+
+    /**
+     * Render Guide page
+     */
+    public function render_guide_page() {
+        require_once BUILD360_AI_PLUGIN_DIR . 'admin/partials/guide.php';
     }
 
     /**

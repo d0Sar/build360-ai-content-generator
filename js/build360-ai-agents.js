@@ -46,8 +46,8 @@ jQuery(document).ready(function ($) {
 
     // Bind events
     function bindEvents() {
-        // Add agent button (on main page)
-        $addAgentButton.on('click', showAddModal);
+        // Add agent button (delegated so dynamically added buttons also work)
+        $(document).on('click', '.add-agent', showAddModal);
 
         // Edit agent buttons (delegated to agents list container)
         $agentsListContainer.on('click', '.edit-agent', function (e) {

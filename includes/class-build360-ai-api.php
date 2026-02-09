@@ -355,11 +355,20 @@ class Build360_AI_API {
         // The external API endpoint is /api/generate
         $endpoint = 'generate'; // Not 'generate/' . $content_context_type anymore for this specific API call
 
+        // Backend API only accepts 'post' or 'taxonomy' as type.
+        // Map WordPress content types to what the API expects.
+        $api_type = $content_context_type;
+        if (in_array($content_context_type, array('product', 'post', 'page'), true)) {
+            $api_type = 'post';
+        } elseif (in_array($content_context_type, array('category', 'product_cat', 'post_tag'), true)) {
+            $api_type = 'taxonomy';
+        }
+
         $request_body = array(
             'title'               => $base_title,
             'description'         => $base_description,
             'prompt'              => $final_prompt,
-            'type'                => $content_context_type,
+            'type'                => $api_type,
             'agent_id'            => $agent_id,
             'model'               => $api_model,
             'text_style'          => $api_text_style,

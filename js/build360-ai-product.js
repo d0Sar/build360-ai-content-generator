@@ -230,8 +230,20 @@ jQuery(document).ready(function ($) {
                 if (key === 'title') { $('#title').val(textToApply).trigger('input'); }
                 else if (key === 'description') { if (typeof tinyMCE !== 'undefined' && tinyMCE.get('content')) tinyMCE.get('content').setContent(textToApply); else $('#content').val(textToApply); }
                 else if (key === 'short_description') { if (typeof tinyMCE !== 'undefined' && tinyMCE.get('excerpt')) tinyMCE.get('excerpt').setContent(textToApply); else $('#excerpt').val(textToApply); }
-                else if (key === 'seo_title') { $('#yoast_wpseo_title, input[name="yoast_wpseo_title"], #rank_math_title').val(textToApply).trigger('input'); }
-                else if (key === 'seo_description') { $('#yoast_wpseo_metadesc, textarea[name="yoast_wpseo_metadesc"], #rank_math_description').val(textToApply).trigger('input'); }
+                else if (key === 'seo_title') {
+                    $('#yoast_wpseo_title, input[name="yoast_wpseo_title"], #rank_math_title').val(textToApply).trigger('input');
+                    // Update Yoast React UI via Redux store
+                    if (window.wp && wp.data && wp.data.dispatch('yoast-seo/editor')) {
+                        wp.data.dispatch('yoast-seo/editor').updateData({ title: textToApply });
+                    }
+                }
+                else if (key === 'seo_description') {
+                    $('#yoast_wpseo_metadesc, textarea[name="yoast_wpseo_metadesc"], #rank_math_description').val(textToApply).trigger('input');
+                    // Update Yoast React UI via Redux store
+                    if (window.wp && wp.data && wp.data.dispatch('yoast-seo/editor')) {
+                        wp.data.dispatch('yoast-seo/editor').updateData({ description: textToApply });
+                    }
+                }
             }
         });
         $status.removeClass('error').addClass('success').text('Fields updated').show();

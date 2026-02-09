@@ -97,77 +97,7 @@ jQuery(document).ready(function ($) {
         $(this).find('.dashicons').toggleClass('dashicons-visibility dashicons-hidden');
     });
 
-    // Toggle API details
-    $('#build360_ai_toggle_api_details').on('click', function () {
-        const $details = $('#build360_ai_api_details');
-        const $button = $(this);
-
-        $details.slideToggle(200);
-
-        if ($details.is(':visible')) {
-            $button.html('<span class="dashicons dashicons-info-outline"></span> ' + build360_ai_vars.i18n.hide_api_details);
-        } else {
-            $button.html('<span class="dashicons dashicons-info-outline"></span> ' + build360_ai_vars.i18n.show_api_details);
-        }
-    });
-
-    // Test connection button
-    $('#build360_ai_test_connection').on('click', function () {
-        const $button = $(this);
-        const $spinner = $button.next('.spinner');
-        const $result = $('#build360_ai_connection_result');
-        const apiKey = $('#build360_ai_api_key').val();
-        const domain = $('#build360_ai_domain').val();
-
-        if (!apiKey || !domain) {
-            $result.html('<div class="notice notice-error inline"><p>' + build360_ai_vars.i18n.enter_api_details + '</p></div>');
-            return;
-        }
-
-        // Show loading state
-        $button.prop('disabled', true);
-        $spinner.addClass('is-active');
-        $result.empty();
-
-        // Make AJAX request
-        $.ajax({
-            url: build360_ai_vars.ajax_url,
-            type: 'POST',
-            data: {
-                action: 'build360_ai_test_connection',
-                nonce: build360_ai_vars.nonce,
-                api_key: apiKey,
-                domain: domain
-            },
-            success: function (response) {
-                if (response.success) {
-                    $result.html('<div class="notice notice-success inline"><p>' + response.data.message + '</p></div>');
-
-                    // Update token usage if available
-                    if (response.data.token_usage) {
-                        updateTokenUsage(response.data);
-                    } else if (response.data.available_tokens !== undefined && response.data.used_tokens_website !== undefined) {
-                        // Handle the new token balance structure from get_token_balance
-                        updateTokenUsage({
-                            token_balance: {
-                                available: response.data.available_tokens,
-                                used: response.data.used_tokens_website
-                            }
-                        });
-                    }
-                } else {
-                    $result.html('<div class="notice notice-error inline"><p>' + response.data.message + '</p></div>');
-                }
-            },
-            error: function () {
-                $result.html('<div class="notice notice-error inline"><p>' + build360_ai_vars.i18n.ajax_error + '</p></div>');
-            },
-            complete: function () {
-                $button.prop('disabled', false);
-                $spinner.removeClass('is-active');
-            }
-        });
-    });
+    // Toggle API details and Test connection are handled by build360-ai-test.js
 
     // Tab navigation
     $('.build360-ai-tab-button').on('click', function () {

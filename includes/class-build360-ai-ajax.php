@@ -86,6 +86,10 @@ class Build360_AI_Ajax {
         add_action('wp_ajax_build360_ai_save_agent', array($this, 'save_agent_handler'));
         add_action('wp_ajax_build360_ai_delete_agent', array($this, 'delete_agent_handler'));
         add_action('wp_ajax_build360_ai_activate_website', array($this, 'activate_website_handler'));
+        // Bulk generation progress endpoints
+        add_action('wp_ajax_build360_ai_bulk_progress', array($this, 'bulk_progress_handler'));
+        add_action('wp_ajax_build360_ai_bulk_results', array($this, 'bulk_results_handler'));
+        add_action('wp_ajax_build360_ai_bulk_cancel', array($this, 'bulk_cancel_handler'));
     }
 
     /**
@@ -105,6 +109,10 @@ class Build360_AI_Ajax {
         add_action('wp_ajax_build360_ai_save_agent', array($this, 'save_agent_handler'));
         add_action('wp_ajax_build360_ai_delete_agent', array($this, 'delete_agent_handler'));
         add_action('wp_ajax_build360_ai_activate_website', array($this, 'activate_website_handler'));
+        // Bulk generation progress endpoints
+        add_action('wp_ajax_build360_ai_bulk_progress', array($this, 'bulk_progress_handler'));
+        add_action('wp_ajax_build360_ai_bulk_results', array($this, 'bulk_results_handler'));
+        add_action('wp_ajax_build360_ai_bulk_cancel', array($this, 'bulk_cancel_handler'));
     }
 
     /**
@@ -424,7 +432,7 @@ class Build360_AI_Ajax {
      * Test the API connection
      */
     public function test_connection() {
-        check_ajax_referer('build360_ai_nonce', 'nonce');
+        check_ajax_referer('build360_ai_test_connection', 'nonce');
 
         if (!current_user_can('manage_options')) {
             wp_send_json_error(array(
@@ -699,6 +707,152 @@ class Build360_AI_Ajax {
             ),
             'processed' => $processed,
             'errors' => $errors,
+        ));
+    }
+
+    /**
+     * Get bulk generation job progress
+     */
+    public function bulk_progress_handler() {
+        check_ajax_referer('build360_ai_bulk_progress_nonce', 'nonce');
+
+        if (!current_user_can('edit_products')) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'build360-ai')));
+            return;
+        }
+
+        $job_id = isset($_POST['job_id']) ? sanitize_text_field($_POST['job_id']) : '';
+
+        // If no job_id passed, try to find active job for current user
+        if (empty($job_id)) {
+            $job_id = get_user_meta(get_current_user_id(), '_build360_ai_active_bulk_job', true);
+        }
+
+        if (empty($job_id)) {
+            wp_send_json_error(array('message' => __('No active bulk job found.', 'build360-ai'), 'no_job' => true));
+            return;
+        }
+
+        $job_data = get_option('build360_ai_bulk_job_' . $job_id);
+        if (!$job_data || !is_array($job_data)) {
+            // Job data cleaned up or doesn't exist
+            delete_user_meta(get_current_user_id(), '_build360_ai_active_bulk_job');
+            wp_send_json_error(array('message' => __('Bulk job data not found. It may have been cleaned up.', 'build360-ai'), 'no_job' => true));
+            return;
+        }
+
+        // Build per-product summary (lightweight - no full previews)
+        $products_summary = array();
+        foreach ($job_data['products'] as $pid => $pdata) {
+            $field_statuses = array();
+            foreach ($pdata['fields'] as $fname => $fdata) {
+                $field_statuses[$fname] = $fdata['status'];
+            }
+            $products_summary[$pid] = array(
+                'name' => $pdata['name'],
+                'status' => $pdata['status'],
+                'fields' => $field_statuses,
+            );
+        }
+
+        wp_send_json_success(array(
+            'job_id' => $job_data['job_id'],
+            'status' => $job_data['status'],
+            'total' => $job_data['total'],
+            'completed' => $job_data['completed'],
+            'succeeded' => $job_data['succeeded'],
+            'failed' => $job_data['failed'],
+            'products' => $products_summary,
+        ));
+    }
+
+    /**
+     * Get full bulk generation results (with content previews)
+     */
+    public function bulk_results_handler() {
+        check_ajax_referer('build360_ai_bulk_results_nonce', 'nonce');
+
+        if (!current_user_can('edit_products')) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'build360-ai')));
+            return;
+        }
+
+        $job_id = isset($_POST['job_id']) ? sanitize_text_field($_POST['job_id']) : '';
+        if (empty($job_id)) {
+            $job_id = get_user_meta(get_current_user_id(), '_build360_ai_active_bulk_job', true);
+        }
+
+        if (empty($job_id)) {
+            wp_send_json_error(array('message' => __('No active bulk job found.', 'build360-ai')));
+            return;
+        }
+
+        $job_data = get_option('build360_ai_bulk_job_' . $job_id);
+        if (!$job_data || !is_array($job_data)) {
+            wp_send_json_error(array('message' => __('Bulk job data not found.', 'build360-ai')));
+            return;
+        }
+
+        // Include full product details with previews
+        $products_detail = array();
+        foreach ($job_data['products'] as $pid => $pdata) {
+            $products_detail[$pid] = array(
+                'name' => $pdata['name'],
+                'status' => $pdata['status'],
+                'fields' => $pdata['fields'],
+                'edit_url' => get_edit_post_link($pid, 'raw'),
+            );
+        }
+
+        wp_send_json_success(array(
+            'job_id' => $job_data['job_id'],
+            'status' => $job_data['status'],
+            'total' => $job_data['total'],
+            'succeeded' => $job_data['succeeded'],
+            'failed' => $job_data['failed'],
+            'products' => $products_detail,
+        ));
+    }
+
+    /**
+     * Cancel a running bulk generation job
+     */
+    public function bulk_cancel_handler() {
+        check_ajax_referer('build360_ai_bulk_cancel_nonce', 'nonce');
+
+        if (!current_user_can('edit_products')) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'build360-ai')));
+            return;
+        }
+
+        $job_id = isset($_POST['job_id']) ? sanitize_text_field($_POST['job_id']) : '';
+        if (empty($job_id)) {
+            $job_id = get_user_meta(get_current_user_id(), '_build360_ai_active_bulk_job', true);
+        }
+
+        if (empty($job_id)) {
+            wp_send_json_error(array('message' => __('No active bulk job found.', 'build360-ai')));
+            return;
+        }
+
+        $job_data = get_option('build360_ai_bulk_job_' . $job_id);
+        if (!$job_data || !is_array($job_data)) {
+            wp_send_json_error(array('message' => __('Bulk job data not found.', 'build360-ai')));
+            return;
+        }
+
+        // Mark job as cancelled - pending tasks will bail out when they start
+        $job_data['status'] = 'cancelled';
+        update_option('build360_ai_bulk_job_' . $job_id, $job_data, false);
+
+        // Try to unschedule pending actions
+        if (function_exists('as_unschedule_all_actions')) {
+            as_unschedule_all_actions('build360_ai_process_single_product', null, 'build360-ai');
+        }
+
+        wp_send_json_success(array(
+            'message' => __('Bulk generation job has been cancelled.', 'build360-ai'),
+            'job_id' => $job_id,
         ));
     }
 

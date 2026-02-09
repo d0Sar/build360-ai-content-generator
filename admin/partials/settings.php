@@ -71,6 +71,7 @@ $api_configured = $api->is_configured();
                     <th scope="row">
                         <label for="build360_ai_api_key"><?php _e('API Key', 'build360-ai'); ?></label>
                         <span class="build360-ai-required-field">*</span>
+                        <span class="build360-tooltip" data-tooltip="<?php esc_attr_e('Your Build360 API key. Get it from your Build360.gr account dashboard.', 'build360-ai'); ?>"><span class="dashicons dashicons-editor-help"></span></span>
                     </th>
                     <td>
                         <input type="password"
@@ -89,6 +90,7 @@ $api_configured = $api->is_configured();
                             <button type="button" id="build360_ai_test_connection" class="button button-secondary">
                                 <span class="dashicons dashicons-yes-alt"></span> <?php _e('Test Connection', 'build360-ai'); ?>
                             </button>
+                            <span class="build360-tooltip" data-tooltip="<?php esc_attr_e('Tests that your API key and domain are correctly configured.', 'build360-ai'); ?>"><span class="dashicons dashicons-editor-help"></span></span>
                             <span class="spinner"></span>
                             <div id="build360_ai_connection_result" class="build360-ai-connection-result"></div>
 
@@ -157,9 +159,7 @@ Headers:
                                required>
                         <p class="description">
                             <?php _e('Enter the domain for the Build360 AI API. The default value should work for most users.', 'build360-ai'); ?>
-                            <span class="build360-ai-tooltip" title="<?php esc_attr_e('Only change this if instructed by Build360 support team.', 'build360-ai'); ?>">
-                                <span class="dashicons dashicons-info-outline"></span>
-                            </span>
+                            <span class="build360-tooltip" data-tooltip="<?php esc_attr_e('Only change this if instructed by Build360 support team.', 'build360-ai'); ?>"><span class="dashicons dashicons-editor-help"></span></span>
                         </p>
                     </td>
                 </tr>
@@ -182,9 +182,7 @@ Headers:
                             <span class="build360-ai-toggle-slider"></span>
                             <span class="build360-ai-field-title"><?php _e('Debug Mode', 'build360-ai'); ?></span>
                         </label>
-                        <span class="build360-ai-tooltip" title="<?php esc_attr_e('Logs detailed information about API requests and responses for troubleshooting.', 'build360-ai'); ?>">
-                            <span class="dashicons dashicons-info-outline"></span>
-                        </span>
+                        <span class="build360-tooltip" data-tooltip="<?php esc_attr_e('Logs detailed information about API requests and responses for troubleshooting.', 'build360-ai'); ?>"><span class="dashicons dashicons-editor-help"></span></span>
                     </div>
                     <div class="build360-ai-advanced-setting-body">
                         <p class="description">
@@ -200,9 +198,7 @@ Headers:
                 <div class="build360-ai-advanced-setting-card">
                     <div class="build360-ai-advanced-setting-header">
                         <span class="build360-ai-field-title"><?php _e('Cache Settings', 'build360-ai'); ?></span>
-                        <span class="build360-ai-tooltip" title="<?php esc_attr_e('Manage the plugin\'s content cache to improve performance.', 'build360-ai'); ?>">
-                            <span class="dashicons dashicons-info-outline"></span>
-                        </span>
+                        <span class="build360-tooltip" data-tooltip="<?php esc_attr_e('Manage the plugin\'s content cache to improve performance.', 'build360-ai'); ?>"><span class="dashicons dashicons-editor-help"></span></span>
                     </div>
                     <div class="build360-ai-advanced-setting-body">
                         <p class="description">
@@ -220,7 +216,9 @@ Headers:
 
         <div class="build360-ai-card">
             <div class="build360-ai-settings-section">
-                <h2><span class="dashicons dashicons-networking"></span> <?php _e('AI Agent Assignments', 'build360-ai'); ?></h2>
+                <h2><span class="dashicons dashicons-networking"></span> <?php _e('AI Agent Assignments', 'build360-ai'); ?>
+                    <span class="build360-tooltip" data-tooltip="<?php esc_attr_e('Assign an AI Agent to each content type. The agent\'s settings (model, prompt) will be used when generating content.', 'build360-ai'); ?>"><span class="dashicons dashicons-editor-help"></span></span>
+                </h2>
                 <p class="build360-ai-section-description">
                     <?php _e('Assign your configured AI Agents to specific post types and taxonomies. The assigned agent\'s settings will be used when generating content for these types.', 'build360-ai'); ?>
                 </p>

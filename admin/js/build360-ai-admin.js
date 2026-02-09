@@ -28,48 +28,7 @@
      * Initialize settings page
      */
     function initSettingsPage() {
-        // Test connection
-        $('#build360_ai_test_connection').on('click', function () {
-            const $button = $(this);
-            const $spinner = $button.next('.spinner');
-            const $result = $('#build360_ai_connection_result');
-            const apiKey = $('#build360_ai_api_key').val();
-            const domain = $('#build360_ai_domain').val();
-
-            if (!apiKey || !domain) {
-                $result.removeClass('success').addClass('error').text(build360_ai_vars.i18n.enter_api_details || 'Please enter both API Key and API Domain.');
-                return;
-            }
-
-            $button.prop('disabled', true);
-            $spinner.addClass('is-active');
-            $result.removeClass('success error').empty();
-
-            $.ajax({
-                url: build360_ai_vars.ajax_url,
-                type: 'POST',
-                data: {
-                    action: 'build360_ai_test_connection',
-                    nonce: build360_ai_vars.nonces.test_connection,
-                    api_key: apiKey,
-                    domain: domain
-                },
-                success: function (response) {
-                    if (response.success) {
-                        $result.addClass('success').text(response.data.message);
-                    } else {
-                        $result.addClass('error').text(response.data.message);
-                    }
-                },
-                error: function () {
-                    $result.addClass('error').text(build360_ai_vars.i18n.ajax_error || 'An AJAX error occurred.');
-                },
-                complete: function () {
-                    $button.prop('disabled', false);
-                    $spinner.removeClass('is-active');
-                }
-            });
-        });
+        // Test connection is handled by build360-ai-settings.js
 
         // Save settings
         $('#build360_ai_save_settings').on('click', function () {

@@ -20,7 +20,7 @@ jQuery(document).ready(function($) {
     });
 
     // Test Connection
-    $('#build360_ai_test_connection').on('click', function() {
+    $('#build360_ai_test_connection').on('click', function () {
         const $button = $(this);
         const $spinner = $button.next('.spinner');
         const $result = $('#build360_ai_connection_result');
@@ -29,15 +29,14 @@ jQuery(document).ready(function($) {
 
         if (!apiKey || !domain) {
             $result.removeClass('success').addClass('error')
-                .text(build360_ai_vars.strings.enter_api_details || 'Please enter your API key and domain.')
-                .show();
+                .html(build360_ai_vars.i18n ? build360_ai_vars.i18n.enter_api_details : 'Please enter API Key and Domain first.');
             return;
         }
 
         // Show loading state
         $button.prop('disabled', true);
         $spinner.addClass('is-active');
-        $result.removeClass('success error').hide();
+        $result.removeClass('success error').empty();
 
         // Make AJAX request
         $.ajax({
@@ -45,27 +44,22 @@ jQuery(document).ready(function($) {
             type: 'POST',
             data: {
                 action: 'build360_ai_test_connection',
-                nonce: build360_ai_vars.nonce,
+                nonce: build360_ai_vars.nonces.test_connection,
                 api_key: apiKey,
                 domain: domain
             },
-            success: function(response) {
+            success: function (response) {
                 if (response.success) {
-                    $result.removeClass('error').addClass('success')
-                        .text(response.data.message || 'Connection successful!')
-                        .show();
+                    $result.removeClass('error').addClass('success').html(response.data.message);
                 } else {
-                    $result.removeClass('success').addClass('error')
-                        .text(response.data.message || 'Connection failed. Please check your API credentials.')
-                        .show();
+                    $result.removeClass('success').addClass('error').html(response.data.message);
                 }
             },
-            error: function() {
+            error: function () {
                 $result.removeClass('success').addClass('error')
-                    .text(build360_ai_vars.strings.ajax_error || 'An error occurred while testing the connection.')
-                    .show();
+                    .html(build360_ai_vars.i18n ? build360_ai_vars.i18n.ajax_error : 'An error occurred.');
             },
-            complete: function() {
+            complete: function () {
                 $button.prop('disabled', false);
                 $spinner.removeClass('is-active');
             }
