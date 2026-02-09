@@ -93,26 +93,10 @@ class Build360_AI_Ajax {
     }
 
     /**
-     * Initialize hooks
+     * Initialize hooks (registered in constructor, kept for interface compatibility)
      */
     public function init() {
-        // Admin AJAX actions
-        add_action('wp_ajax_build360_ai_generate_content', array($this, 'generate_content'));
-        add_action('wp_ajax_build360_ai_test_connection', array($this, 'test_connection'));
-        add_action('wp_ajax_build360_ai_get_token_balance', array($this, 'get_token_balance'));
-        add_action('wp_ajax_build360_ai_save_settings', array($this, 'save_settings'));
-        add_action('wp_ajax_build360_ai_generate_product_content', array($this, 'generate_product_content'));
-        add_action('wp_ajax_build360_ai_bulk_generate_product_content', array($this, 'bulk_generate_product_content'));
-        // Agent operations
-        add_action('wp_ajax_build360_ai_list_agents', array($this, 'list_agents_handler'));
-        add_action('wp_ajax_build360_ai_get_agent_details', array($this, 'get_agent_details_handler'));
-        add_action('wp_ajax_build360_ai_save_agent', array($this, 'save_agent_handler'));
-        add_action('wp_ajax_build360_ai_delete_agent', array($this, 'delete_agent_handler'));
-        add_action('wp_ajax_build360_ai_activate_website', array($this, 'activate_website_handler'));
-        // Bulk generation progress endpoints
-        add_action('wp_ajax_build360_ai_bulk_progress', array($this, 'bulk_progress_handler'));
-        add_action('wp_ajax_build360_ai_bulk_results', array($this, 'bulk_results_handler'));
-        add_action('wp_ajax_build360_ai_bulk_cancel', array($this, 'bulk_cancel_handler'));
+        // All AJAX hooks are registered in the constructor.
     }
 
     /**
@@ -255,7 +239,7 @@ class Build360_AI_Ajax {
                                 // For now, assume direct mapping if not specified, or log an error
                                 // $api_response_key = $field_key; // Fallback if not explicitly mapped - could be risky
                                 error_log('[Build360 AI] Unmapped field key encountered during save: ' . $field_key);
-                                continue; // Skip unmapped keys to be safe
+                                continue 2; // Skip unmapped keys to be safe (targets foreach, not switch)
                         }
 
                         if (!empty($api_response_key) && isset($generated_content_map[$api_response_key])) {
@@ -404,8 +388,70 @@ class Build360_AI_Ajax {
                 } else {
                      error_log('[Build360 AI] Could not retrieve product with ID: ' . $product_id);
                 }
-            } elseif ($product_id) { // Log if $generated_content_map is not as expected but product_id was present
-                 error_log('[Build360 AI] Generated content map was empty or not an array for product ID: ' . $product_id . '. Map: ' . print_r($generated_content_map, true));
+            } elseif ($product_id && $generated_content_map && is_array($generated_content_map)) {
+                // Post/Page save path (not a WooCommerce product)
+                $post_obj = get_post($product_id);
+                if ($post_obj && in_array($post_obj->post_type, array('post', 'page'))) {
+                    foreach ($fields_to_update as $field_key) {
+                        $api_response_key = '';
+                        switch ($field_key) {
+                            case 'content':
+                                $api_response_key = 'content';
+                                break;
+                            case 'seo_title':
+                                $api_response_key = 'meta_title';
+                                break;
+                            case 'seo_description':
+                                $api_response_key = 'meta_description';
+                                break;
+                            default:
+                                continue 2;
+                        }
+
+                        if (!empty($api_response_key) && isset($generated_content_map[$api_response_key])) {
+                            $content_to_apply = $generated_content_map[$api_response_key];
+                            if (is_array($content_to_apply)) {
+                                continue;
+                            }
+                            $string_content = strval($content_to_apply);
+
+                            switch ($field_key) {
+                                case 'content':
+                                    wp_update_post(array(
+                                        'ID' => $product_id,
+                                        'post_content' => wp_kses_post($string_content),
+                                    ));
+                                    break;
+                                case 'seo_title':
+                                    $sanitized = sanitize_text_field($string_content);
+                                    update_post_meta($product_id, '_yoast_wpseo_title', $sanitized);
+                                    update_post_meta($product_id, 'rank_math_title', $sanitized);
+                                    update_post_meta($product_id, '_seopress_titles_title', $sanitized);
+                                    update_post_meta($product_id, '_aioseo_title', $sanitized);
+                                    break;
+                                case 'seo_description':
+                                    $sanitized = wp_kses_post($string_content);
+                                    update_post_meta($product_id, '_yoast_wpseo_metadesc', $sanitized);
+                                    update_post_meta($product_id, 'rank_math_description', $sanitized);
+                                    update_post_meta($product_id, '_seopress_titles_desc', $sanitized);
+                                    update_post_meta($product_id, '_aioseo_description', $sanitized);
+                                    break;
+                            }
+                        }
+                    }
+                    update_post_meta($product_id, '_build360_ai_last_generated', current_time('mysql'));
+
+                    $activity_message = sprintf(
+                        __('AI content generated for %s: %s (ID: %d). Fields updated: %s', 'build360-ai'),
+                        $post_obj->post_type,
+                        get_the_title($product_id),
+                        $product_id,
+                        implode(', ', $fields_to_update)
+                    );
+                    $this->add_to_recent_activity($activity_message);
+                }
+            } elseif ($product_id) {
+                 error_log('[Build360 AI] Generated content map was empty or not an array for ID: ' . $product_id . '. Map: ' . print_r($generated_content_map, true));
             }
 
             // Prepare success response for JS
@@ -968,30 +1014,28 @@ class Build360_AI_Ajax {
         
         $is_agent_id_empty = empty($agent_id);
         $is_name_empty = isset($agent_data['name']) ? empty($agent_data['name']) : true;
-        $is_model_empty = isset($agent_data['ai_model']) ? empty($agent_data['ai_model']) : true;
         $is_prompt_empty = isset($agent_data['system_prompt']) ? empty($agent_data['system_prompt']) : true;
-        
+
         $log_message_checks = '[Build360 AI Debug] Checking: is_agent_id_empty=' . ($is_agent_id_empty ? 'true' : 'false') .
                     ', is_name_empty=' . ($is_name_empty ? 'true' : 'false') .
-                    ', is_model_empty=' . ($is_model_empty ? 'true' : 'false') .
                     ', is_prompt_empty=' . ($is_prompt_empty ? 'true' : 'false');
         $this->custom_log($log_message_checks);
         if ($wc_logger) {
             $wc_logger->debug($log_message_checks, $context);
         }
 
-        if ($is_agent_id_empty && ($is_name_empty || $is_model_empty || $is_prompt_empty)) {
-            $log_message_validation_failed = '[Build360 AI Debug] Validation failed: Name, AI Model, or System Prompt is empty.';
+        if ($is_agent_id_empty && ($is_name_empty || $is_prompt_empty)) {
+            $log_message_validation_failed = '[Build360 AI Debug] Validation failed: Name or System Prompt is empty.';
             $this->custom_log($log_message_validation_failed);
             if ($wc_logger) {
                 $wc_logger->debug($log_message_validation_failed, $context);
             }
-            $this->send_json_response(array('message' => __('Name, AI Model, and System Prompt are required to create an agent.', 'build360-ai')), false);
+            $this->send_json_response(array('message' => __('Name and System Prompt are required to create an agent.', 'build360-ai')), false);
         }
         
         // Sanitize agent_data (example, expand as needed)
         $sanitized_data = array();
-        $allowed_fields = array('name', 'description', 'ai_model', 'text_style', 'system_prompt', 'content_settings', 'is_active');
+        $allowed_fields = array('name', 'description', 'text_style', 'system_prompt', 'content_settings', 'is_active');
         foreach($allowed_fields as $field) {
             if (isset($agent_data[$field])) {
                 if ($field === 'content_settings' && is_array($agent_data[$field])) {

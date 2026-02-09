@@ -62,7 +62,6 @@ function build360_ai_activate() {
     // Create necessary database tables and options
     add_option('build360_ai_api_key', '');
     add_option('build360_ai_domain', '');
-    add_option('build360_ai_model', 'gpt-4');
     add_option('build360_ai_text_style', 'professional');
     add_option('build360_ai_max_product_text', '250');
     add_option('build360_ai_max_product_desc_text', '300');
@@ -121,7 +120,6 @@ function build360_ai_uninstall() {
     // Clean up options
     delete_option('build360_ai_api_key');
     delete_option('build360_ai_domain');
-    delete_option('build360_ai_model');
     delete_option('build360_ai_text_style');
     delete_option('build360_ai_max_product_text');
     delete_option('build360_ai_max_product_desc_text');

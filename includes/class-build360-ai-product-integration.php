@@ -283,7 +283,7 @@ public function handle_bulk_actions($redirect_to, $doaction, $post_ids) {
                 'build360-ai'
             );
         }
-        $delay += 2; // 2-second stagger between products
+        $delay += 1; // 1-second stagger between products
     }
 
     // Schedule cleanup after 1 hour
@@ -332,48 +332,57 @@ public function process_single_product_background($job_id, $product_id) {
         update_option('build360_ai_bulk_job_' . $job_id, $job_data, false);
     }
 
-    $generator = new Build360_AI_Generator();
     $agent_id = $job_data['agent_id'];
     $fields = $job_data['fields'];
     $fields_succeeded = 0;
-    $product_failed = false;
 
-    foreach ($fields as $field) {
-        // Re-read job data to check for cancellation between fields
-        $current_job = get_option('build360_ai_bulk_job_' . $job_id);
-        if ($current_job && $current_job['status'] === 'cancelled') {
+    try {
+        // Single API call per product (instead of 1 per field)
+        $api = new Build360_AI_API();
+        $api_data = array(
+            'product_title' => $product->get_name(),
+            'product_description' => $product->get_description() ?: '-',
+            'fields_requested' => $fields,
+        );
+        $api_response = $api->generate_content($agent_id, 'product', $api_data);
+
+        // Read job_data once before the field loop
+        $job_data = get_option('build360_ai_bulk_job_' . $job_id);
+        if ($job_data && $job_data['status'] === 'cancelled') {
             return;
         }
 
-        try {
-            $api_response = $generator->generate_product_content_with_agent($product, $field, $agent_id, array());
+        foreach ($fields as $field) {
             $content = $this->extract_content_from_response($api_response, $field);
 
             if ($content !== null) {
                 $this->apply_field_content($product, $product_id, $field, $content);
 
-                // Update job data with field success
-                $job_data = get_option('build360_ai_bulk_job_' . $job_id);
                 if (isset($job_data['products'][$product_id]['fields'][$field])) {
                     $job_data['products'][$product_id]['fields'][$field]['status'] = 'completed';
                     $job_data['products'][$product_id]['fields'][$field]['preview'] = mb_substr(wp_strip_all_tags($content), 0, 100);
-                    update_option('build360_ai_bulk_job_' . $job_id, $job_data, false);
                 }
                 $fields_succeeded++;
             } else {
-                $job_data = get_option('build360_ai_bulk_job_' . $job_id);
                 if (isset($job_data['products'][$product_id]['fields'][$field])) {
                     $job_data['products'][$product_id]['fields'][$field]['status'] = 'failed';
-                    update_option('build360_ai_bulk_job_' . $job_id, $job_data, false);
                 }
             }
-        } catch (Exception $e) {
-            error_log('[Build360 AI Bulk] Exception for product ' . $product_id . ' field ' . $field . ': ' . $e->getMessage());
-            $job_data = get_option('build360_ai_bulk_job_' . $job_id);
-            if (isset($job_data['products'][$product_id]['fields'][$field])) {
-                $job_data['products'][$product_id]['fields'][$field]['status'] = 'failed';
-                update_option('build360_ai_bulk_job_' . $job_id, $job_data, false);
+        }
+
+        // Write job_data once after all fields processed
+        update_option('build360_ai_bulk_job_' . $job_id, $job_data, false);
+
+    } catch (Exception $e) {
+        error_log('[Build360 AI Bulk] Exception for product ' . $product_id . ': ' . $e->getMessage());
+        $job_data = get_option('build360_ai_bulk_job_' . $job_id);
+        if ($job_data && isset($job_data['products'][$product_id])) {
+            foreach ($fields as $field) {
+                if (isset($job_data['products'][$product_id]['fields'][$field])) {
+                    $job_data['products'][$product_id]['fields'][$field]['status'] = 'failed';
+                }
             }
+            update_option('build360_ai_bulk_job_' . $job_id, $job_data, false);
         }
     }
 
@@ -651,9 +660,23 @@ public function handle_single_generation() {
     $fields = array('description', 'short_description');
     $success = false;
 
+    // Look up agent_id from assignments (same pattern as handle_bulk_actions)
+    $agent_assignments = get_option('build360_ai_agent_assignments', array());
+    $product_agent_id = null;
+    foreach ($agent_assignments as $assignment) {
+        if (isset($assignment['type']) && $assignment['type'] === 'product' && isset($assignment['agent_id'])) {
+            $product_agent_id = $assignment['agent_id'];
+            break;
+        }
+    }
+
+    if (empty($product_agent_id)) {
+        wp_die(__('No AI Agent is assigned to the "product" content type. Please check plugin settings.', 'build360-ai'));
+    }
+
     try {
         foreach ($fields as $field) {
-            $content = $generator->generate_product_content($product, $field);
+            $content = $generator->generate_product_content($product, $field, $product_agent_id);
             if ($content) {
                 switch ($field) {
                     case 'description':

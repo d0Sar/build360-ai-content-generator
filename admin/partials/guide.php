@@ -112,7 +112,66 @@ if (!defined('ABSPATH')) {
         </div>
     </div>
 
-    <!-- 4. Bulk Generation -->
+    <!-- 4. Blog Post / Page Generation -->
+    <div class="build360-guide-section">
+        <div class="build360-guide-section-header">
+            <span class="dashicons dashicons-admin-post"></span>
+            <h3><?php _e('Blog Post / Page Generation', 'build360-ai'); ?></h3>
+            <span class="dashicons dashicons-arrow-down-alt2 build360-guide-toggle"></span>
+        </div>
+        <div class="build360-guide-section-body">
+            <h4><?php _e('Using the Meta Box', 'build360-ai'); ?></h4>
+            <ol>
+                <li><?php _e('Edit any WordPress post or page.', 'build360-ai'); ?></li>
+                <li><?php _e('Scroll down to the <strong>Build360 AI Content Generator</strong> box.', 'build360-ai'); ?></li>
+                <li><?php _e('Select which fields to generate:', 'build360-ai'); ?>
+                    <ul>
+                        <li><strong><?php _e('Post Content', 'build360-ai'); ?></strong> &ndash; <?php _e('The main body content of your post or page.', 'build360-ai'); ?></li>
+                        <li><strong><?php _e('SEO Title', 'build360-ai'); ?></strong> &ndash; <?php _e('Optimized title for search engines.', 'build360-ai'); ?></li>
+                        <li><strong><?php _e('SEO Description', 'build360-ai'); ?></strong> &ndash; <?php _e('Meta description for search engine results.', 'build360-ai'); ?></li>
+                    </ul>
+                </li>
+                <li><?php _e('Click <strong>Generate Content</strong>.', 'build360-ai'); ?></li>
+                <li><?php _e('Review the generated content and click <strong>Approve & Update Fields</strong>.', 'build360-ai'); ?></li>
+            </ol>
+
+            <div class="guide-tip">
+                <strong><?php _e('Tip:', 'build360-ai'); ?></strong> <?php _e('Make sure you have an AI Agent assigned to the "post" or "page" content type in the Settings page.', 'build360-ai'); ?>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. Category Generation -->
+    <div class="build360-guide-section">
+        <div class="build360-guide-section-header">
+            <span class="dashicons dashicons-category"></span>
+            <h3><?php _e('Category Generation', 'build360-ai'); ?></h3>
+            <span class="dashicons dashicons-arrow-down-alt2 build360-guide-toggle"></span>
+        </div>
+        <div class="build360-guide-section-body">
+            <h4><?php _e('Using AI on Category Pages', 'build360-ai'); ?></h4>
+            <ol>
+                <li><?php _e('Go to <strong>Products &rarr; Categories</strong> (for WooCommerce) or <strong>Posts &rarr; Categories</strong>.', 'build360-ai'); ?></li>
+                <li><?php _e('Click <strong>Edit</strong> on any category.', 'build360-ai'); ?></li>
+                <li><?php _e('Scroll down to the <strong>Build360 AI Content Generator</strong> section.', 'build360-ai'); ?></li>
+                <li><?php _e('Select which fields to generate:', 'build360-ai'); ?>
+                    <ul>
+                        <li><strong><?php _e('Category Description', 'build360-ai'); ?></strong> &ndash; <?php _e('The description shown on the category archive page.', 'build360-ai'); ?></li>
+                        <li><strong><?php _e('SEO Title', 'build360-ai'); ?></strong> &ndash; <?php _e('Optimized title for search engines.', 'build360-ai'); ?></li>
+                        <li><strong><?php _e('SEO Description', 'build360-ai'); ?></strong> &ndash; <?php _e('Meta description for search engine results.', 'build360-ai'); ?></li>
+                    </ul>
+                </li>
+                <li><?php _e('Click <strong>Generate Content</strong> and review the results.', 'build360-ai'); ?></li>
+                <li><?php _e('Click <strong>Approve & Apply</strong> to fill the fields, then click <strong>Update</strong> to save the category.', 'build360-ai'); ?></li>
+            </ol>
+
+            <div class="guide-tip">
+                <strong><?php _e('Tip:', 'build360-ai'); ?></strong> <?php _e('Assign an AI Agent to the "product_cat" or "category" content type in Settings for this to work.', 'build360-ai'); ?>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. Bulk Generation -->
     <div class="build360-guide-section">
         <div class="build360-guide-section-header">
             <span class="dashicons dashicons-controls-repeat"></span>
@@ -175,7 +234,7 @@ if (!defined('ABSPATH')) {
             </ol>
 
             <div class="guide-tip">
-                <strong><?php _e('Tip:', 'build360-ai'); ?></strong> <?php _e('You need at least one agent assigned to "Products" for bulk generation and the product meta box to work.', 'build360-ai'); ?>
+                <strong><?php _e('Tip:', 'build360-ai'); ?></strong> <?php _e('You need agents assigned to each content type you want to generate for: "product" for products, "post"/"page" for blog posts and pages, "product_cat"/"category" for categories.', 'build360-ai'); ?>
             </div>
         </div>
     </div>

@@ -52,6 +52,8 @@ class Build360_AI {
         require_once BUILD360_AI_PLUGIN_DIR . 'includes/class-build360-ai-settings.php';
         require_once BUILD360_AI_PLUGIN_DIR . 'includes/class-build360-ai-generator.php';
         require_once BUILD360_AI_PLUGIN_DIR . 'includes/class-build360-ai-product-integration.php';
+        require_once BUILD360_AI_PLUGIN_DIR . 'includes/class-build360-ai-post-integration.php';
+        require_once BUILD360_AI_PLUGIN_DIR . 'includes/class-build360-ai-taxonomy-integration.php';
         require_once BUILD360_AI_PLUGIN_DIR . 'includes/class-build360-ai-ajax.php';
         
         // Admin classes
@@ -95,7 +97,15 @@ class Build360_AI {
         // Initialize product integration
         $product_integration = new Build360_AI_Product_Integration();
         $product_integration->init();
-        
+
+        // Initialize post/page integration
+        $post_integration = new Build360_AI_Post_Integration();
+        $post_integration->init();
+
+        // Initialize taxonomy integration
+        $taxonomy_integration = new Build360_AI_Taxonomy_Integration();
+        $taxonomy_integration->init();
+
         // Initialize AJAX handlers
         $ajax = new Build360_AI_Ajax();
         $ajax->init();

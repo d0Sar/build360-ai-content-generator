@@ -112,7 +112,6 @@ class Build360_AI_Admin {
     public function register_settings() {
         register_setting('build360_ai_settings', 'build360_ai_api_key');
         register_setting('build360_ai_settings', 'build360_ai_domain');
-        register_setting('build360_ai_settings', 'build360_ai_model');
         register_setting('build360_ai_settings', 'build360_ai_text_style');
         register_setting('build360_ai_settings', 'build360_ai_max_product_text');
         register_setting('build360_ai_settings', 'build360_ai_max_product_desc_text');
@@ -131,13 +130,15 @@ class Build360_AI_Admin {
      * Enqueue admin assets
      */
     public function enqueue_assets($hook_suffix) {
-        // Check if we are on a product edit page, product list page, or a plugin page
+        // Check if we are on a product edit page, product list page, post/page edit, taxonomy edit, or a plugin page
         $screen = get_current_screen();
         $is_product_edit_page = ($screen && $screen->post_type === 'product' && ($hook_suffix === 'post.php' || $hook_suffix === 'post-new.php'));
         $is_product_list_page = ($screen && $screen->post_type === 'product' && $hook_suffix === 'edit.php');
         $is_plugin_page = (strpos($hook_suffix, 'build360-ai') !== false);
+        $is_post_or_page_edit = ($screen && in_array($screen->post_type, array('post', 'page')) && in_array($hook_suffix, array('post.php', 'post-new.php')));
+        $is_taxonomy_edit = ($screen && $screen->base === 'term' && in_array($screen->taxonomy, array('product_cat', 'category')));
 
-        if (!$is_product_edit_page && !$is_product_list_page && !$is_plugin_page) {
+        if (!$is_product_edit_page && !$is_product_list_page && !$is_plugin_page && !$is_post_or_page_edit && !$is_taxonomy_edit) {
             return;
         }
 
@@ -294,6 +295,81 @@ class Build360_AI_Admin {
                     filemtime($metabox_css_path)
                 );
             }
+        }
+
+        // Enqueue scripts on post/page edit screens
+        if ($is_post_or_page_edit) {
+            wp_enqueue_script(
+                'build360-ai-product',
+                BUILD360_AI_PLUGIN_URL . 'js/build360-ai-product.js',
+                array('jquery', 'build360-ai-utils'),
+                rand(10000, 99999),
+                true
+            );
+
+            $post_localization_data = $localization_data;
+            $current_post_id = get_the_ID();
+            $post_type = get_post_type($current_post_id);
+            $current_agent_id = null;
+
+            if ($post_type) {
+                $agent_assignments = get_option('build360_ai_agent_assignments', array());
+                foreach ($agent_assignments as $assignment) {
+                    if (isset($assignment['type']) && $assignment['type'] === $post_type && isset($assignment['agent_id'])) {
+                        $current_agent_id = $assignment['agent_id'];
+                        break;
+                    }
+                }
+            }
+            $post_localization_data['current_agent_id'] = $current_agent_id;
+            $post_localization_data['post_id'] = $current_post_id;
+
+            if (!isset($post_localization_data['nonces']['generate_content'])) {
+                $post_localization_data['nonces']['generate_content'] = wp_create_nonce('build360_ai_generate_content');
+            }
+
+            wp_localize_script('build360-ai-product', 'build360_ai_vars', $post_localization_data);
+
+            $metabox_css_path = BUILD360_AI_PLUGIN_DIR . 'css/build360-ai.css';
+            if (file_exists($metabox_css_path)) {
+                wp_enqueue_style(
+                    'build360-ai-metabox',
+                    BUILD360_AI_PLUGIN_URL . 'css/build360-ai.css',
+                    array(),
+                    filemtime($metabox_css_path)
+                );
+            }
+        }
+
+        // Enqueue scripts on taxonomy edit screens
+        if ($is_taxonomy_edit) {
+            wp_enqueue_script(
+                'build360-ai-taxonomy',
+                BUILD360_AI_PLUGIN_URL . 'js/build360-ai-taxonomy.js',
+                array('jquery'),
+                rand(10000, 99999),
+                true
+            );
+
+            $taxonomy_localization_data = $localization_data;
+            $taxonomy_type = $screen->taxonomy;
+            $current_agent_id = null;
+
+            $agent_assignments = get_option('build360_ai_agent_assignments', array());
+            foreach ($agent_assignments as $assignment) {
+                if (isset($assignment['type']) && $assignment['type'] === $taxonomy_type && isset($assignment['agent_id'])) {
+                    $current_agent_id = $assignment['agent_id'];
+                    break;
+                }
+            }
+            $taxonomy_localization_data['current_agent_id'] = $current_agent_id;
+            $taxonomy_localization_data['taxonomy'] = $taxonomy_type;
+
+            if (!isset($taxonomy_localization_data['nonces']['generate_content'])) {
+                $taxonomy_localization_data['nonces']['generate_content'] = wp_create_nonce('build360_ai_generate_content');
+            }
+
+            wp_localize_script('build360-ai-taxonomy', 'build360_ai_vars', $taxonomy_localization_data);
         }
 
         // Enqueue bulk generation JS on product list page

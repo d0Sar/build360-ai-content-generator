@@ -142,6 +142,7 @@ jQuery(document).ready(function ($) {
 
                     const displayLabels = {
                         'title': 'Product Name',
+                        'content': 'Post Content',
                         'description': 'Description',
                         'short_description': 'Short Description',
                         'seo_title': 'SEO Title',
@@ -153,6 +154,7 @@ jQuery(document).ready(function ($) {
                         let generatedText = null;
 
                         if (key === 'title' && dataFromApi.title) generatedText = dataFromApi.title;
+                        else if (key === 'content' && dataFromApi.content) generatedText = dataFromApi.content;
                         else if (key === 'description' && dataFromApi.content) generatedText = dataFromApi.content;
                         else if (key === 'short_description' && dataFromApi.short_description) generatedText = dataFromApi.short_description;
                         else if (key === 'seo_title' && dataFromApi.meta_title) generatedText = dataFromApi.meta_title;
@@ -220,6 +222,7 @@ jQuery(document).ready(function ($) {
             let textToApply = null;
 
             if (key === 'title' && apiData.title) textToApply = apiData.title;
+            else if (key === 'content' && apiData.content) textToApply = apiData.content;
             else if (key === 'description' && apiData.content) textToApply = apiData.content;
             else if (key === 'short_description' && apiData.short_description) textToApply = apiData.short_description;
             else if (key === 'seo_title' && apiData.meta_title) textToApply = apiData.meta_title;
@@ -228,6 +231,7 @@ jQuery(document).ready(function ($) {
 
             if (textToApply) {
                 if (key === 'title') { $('#title').val(textToApply).trigger('input'); }
+                else if (key === 'content') { if (typeof tinyMCE !== 'undefined' && tinyMCE.get('content')) tinyMCE.get('content').setContent(textToApply); else $('#content').val(textToApply); }
                 else if (key === 'description') { if (typeof tinyMCE !== 'undefined' && tinyMCE.get('content')) tinyMCE.get('content').setContent(textToApply); else $('#content').val(textToApply); }
                 else if (key === 'short_description') { if (typeof tinyMCE !== 'undefined' && tinyMCE.get('excerpt')) tinyMCE.get('excerpt').setContent(textToApply); else $('#excerpt').val(textToApply); }
                 else if (key === 'seo_title') {
