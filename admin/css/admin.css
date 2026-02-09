@@ -1,0 +1,198 @@
+/* Token Usage Section Styling - REVISED */
+.build360-ai-token-section {
+    /* Styles for the overall section if needed, inherits from .build360-ai-card */
+}
+
+.build360-ai-token-section h2 {
+    font-size: 1.5em;
+    margin-top: 0;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.build360-ai-token-section h2 .dashicons {
+    margin-right: 8px;
+}
+
+.build360-ai-token-dashboard {
+    display: flex;
+    flex-wrap: wrap;
+    /* Allow wrapping for smaller screens */
+    gap: 20px;
+    /* Space between the two cards */
+    margin-top: 15px;
+}
+
+.build360-ai-token-card,
+.build360-ai-token-usage-card {
+    background-color: #fff;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
+    border-radius: 4px;
+    flex: 1;
+    /* Allow cards to grow */
+    min-width: 300px;
+    /* Minimum width before wrapping */
+    display: flex;
+    flex-direction: column;
+    /* Stack header, body, footer */
+}
+
+.build360-ai-token-header {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+    background-color: #f9f9f9;
+}
+
+.build360-ai-token-title {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #333;
+}
+
+.build360-ai-token-body {
+    padding: 15px;
+    flex-grow: 1;
+    /* Body takes available space */
+}
+
+.build360-ai-token-count {
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.build360-ai-token-count .dashicons {
+    font-size: 2em;
+    color: #2271b1;
+    vertical-align: middle;
+    margin-right: 10px;
+}
+
+.build360-ai-token-count .build360-ai-token-number {
+    font-size: 2.2em;
+    font-weight: 700;
+    color: #2271b1;
+    vertical-align: middle;
+}
+
+.build360-ai-token-progress {
+    height: 10px;
+    /* Slimmer progress bar */
+    background-color: #e9ecef;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 15px;
+}
+
+.build360-ai-token-progress-bar {
+    height: 100%;
+    background-color: #2271b1;
+    /* WordPress Blue */
+    transition: width 0.6s ease;
+    /* Text inside progress bar can be added via JS if needed, or remove if PHP handles it well */
+}
+
+.build360-ai-token-stats {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9em;
+    color: #555;
+    padding: 0 5px;
+    /* Slight padding for stats */
+}
+
+.build360-ai-token-stat-label {
+    display: block;
+    font-size: 0.9em;
+    color: #777;
+}
+
+.build360-ai-token-stat-value {
+    font-weight: 600;
+}
+
+.build360-ai-token-footer {
+    padding: 12px 15px;
+    border-top: 1px solid #eee;
+    text-align: center;
+    /* Center the button */
+    background-color: #f9f9f9;
+}
+
+.build360-ai-token-footer .button-primary .dashicons {
+    margin-right: 5px;
+    vertical-align: text-bottom;
+}
+
+/* Styling for the second card (Token Usage Details) */
+.build360-ai-token-usage-stats {
+    margin-bottom: 15px;
+}
+
+.build360-ai-token-usage-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px dashed #f0f0f0;
+}
+
+.build360-ai-token-usage-stat:last-child {
+    border-bottom: none;
+}
+
+.build360-ai-token-usage-label {
+    font-weight: 500;
+    color: #444;
+}
+
+.build360-ai-token-usage-value {
+    font-weight: 600;
+    color: #2271b1;
+    font-size: 1.1em;
+    margin-left: auto;
+    /* Push value to the right */
+    padding-left: 10px;
+    /* Space before value */
+}
+
+.build360-ai-token-usage-desc {
+    font-size: 0.85em;
+    color: #777;
+    margin-left: 5px;
+}
+
+.build360-ai-token-usage-info p.description {
+    font-size: 0.9em;
+    color: #555;
+    margin-bottom: 8px;
+    line-height: 1.5;
+}
+
+.build360-ai-token-usage-info ul.build360-ai-token-usage-list {
+    list-style: disc;
+    padding-left: 20px;
+    font-size: 0.9em;
+    color: #555;
+    margin-top: 10px;
+}
+
+.build360-ai-token-usage-list li {
+    margin-bottom: 5px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 960px) {
+
+    /* Adjust breakpoint as needed */
+    .build360-ai-token-dashboard {
+        flex-direction: column;
+    }
+
+    .build360-ai-token-card,
+    .build360-ai-token-usage-card {
+        min-width: 100%;
+        /* Full width on smaller screens */
+    }
+}

@@ -1,0 +1,483 @@
+# Copyright (C) 2024 Build360
+# This file is distributed under the same license as the Build360 AI Content Generator plugin.
+msgid ""
+msgstr ""
+"Project-Id-Version: Build360 AI Content Generator 1.1.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/build360-ai-content-generator\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2024-05-15T12:00:00+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.7.1\n"
+"X-Domain: build360-ai\n"
+
+#: build360-ai-content-generator.php:48
+msgid "Build360 AI Content Generator requires WooCommerce to be installed and active."
+msgstr ""
+
+#: admin/partials/settings.php:35
+msgid "Configure your Build360 AI Content Generator settings below. These settings control how the AI generates content for your products, posts, and pages."
+msgstr ""
+
+#: admin/partials/settings.php:40
+msgid "Settings saved successfully!"
+msgstr ""
+
+#: admin/partials/settings.php:49
+msgid "API Configuration"
+msgstr ""
+
+#: admin/partials/settings.php:51
+msgid "Connect to the Build360 AI service by entering your API credentials below. These are required for the plugin to function."
+msgstr ""
+
+#: admin/partials/settings.php:58
+msgid "Connected to Build360 AI service"
+msgstr ""
+
+#: admin/partials/settings.php:63
+msgid "Not connected to Build360 AI service"
+msgstr ""
+
+#: admin/partials/settings.php:71
+msgid "API Key"
+msgstr ""
+
+#: admin/partials/settings.php:85
+msgid "Enter your Build360 AI API key. You can find this in your <a href=\"https://build360.ai/account\" target=\"_blank\">account settings</a>."
+msgstr ""
+
+#: admin/partials/settings.php:91
+msgid "API Domain"
+msgstr ""
+
+#: admin/partials/settings.php:103
+msgid "Enter the domain for the Build360 AI API. The default value should work for most users."
+msgstr ""
+
+#: admin/partials/settings.php:104
+msgid "Only change this if instructed by Build360 support team."
+msgstr ""
+
+#: admin/partials/settings.php:114
+msgid "Content Generation Settings"
+msgstr ""
+
+#: admin/partials/settings.php:116
+msgid "Configure how the AI generates content. These settings affect the style, tone, and quality of all generated content."
+msgstr ""
+
+#: admin/partials/settings.php:122
+msgid "AI Model"
+msgstr ""
+
+#: admin/partials/settings.php:123
+msgid "Different AI models have different capabilities and costs. Higher-tier models generally produce better content but use more tokens."
+msgstr ""
+
+#: admin/partials/settings.php:136
+msgid "Select the AI model to use for content generation. GPT-4 offers the best quality but uses more tokens."
+msgstr ""
+
+#: admin/partials/settings.php:141
+msgid "Quality"
+msgstr ""
+
+#: admin/partials/settings.php:143
+msgid "Good"
+msgstr ""
+
+#: admin/partials/settings.php:144
+msgid "Better"
+msgstr ""
+
+#: admin/partials/settings.php:145
+msgid "Best"
+msgstr ""
+
+#: admin/partials/settings.php:149
+msgid "Speed"
+msgstr ""
+
+#: admin/partials/settings.php:151
+msgid "Standard"
+msgstr ""
+
+#: admin/partials/settings.php:152
+msgid "Fast"
+msgstr ""
+
+#: admin/partials/settings.php:153
+msgid "Fastest"
+msgstr ""
+
+#: admin/partials/settings.php:161
+msgid "Text Style"
+msgstr ""
+
+#: admin/partials/settings.php:162
+msgid "The tone and style of writing that will be used for all generated content."
+msgstr ""
+
+#: admin/partials/settings.php:175
+msgid "Select the writing style for generated content. This affects the tone and voice of all generated text."
+msgstr ""
+
+#: admin/partials/settings.php:180
+msgid "Formal:"
+msgstr ""
+
+#: admin/partials/settings.php:181
+msgid "Utilizes sophisticated language and maintains a professional distance."
+msgstr ""
+
+#: admin/partials/settings.php:184
+msgid "Professional:"
+msgstr ""
+
+#: admin/partials/settings.php:185
+msgid "Clear, direct, and business-appropriate while remaining approachable."
+msgstr ""
+
+#: admin/partials/settings.php:188
+msgid "Friendly:"
+msgstr ""
+
+#: admin/partials/settings.php:189
+msgid "Warm, conversational tone that connects with readers."
+msgstr ""
+
+#: admin/partials/settings.php:192
+msgid "Casual:"
+msgstr ""
+
+#: admin/partials/settings.php:193
+msgid "Relaxed, everyday language that feels like a conversation."
+msgstr ""
+
+#: admin/partials/settings.php:202
+msgid "Maximum Text Lengths"
+msgstr ""
+
+#: admin/partials/settings.php:204
+msgid "Control the length of generated content. Shorter content uses fewer tokens but may be less detailed."
+msgstr ""
+
+#: admin/partials/settings.php:210
+msgid "Short (100-150 chars)"
+msgstr ""
+
+#: admin/partials/settings.php:211
+msgid "Good for titles, alt text"
+msgstr ""
+
+#: admin/partials/settings.php:215
+msgid "Medium (200-300 chars)"
+msgstr ""
+
+#: admin/partials/settings.php:216
+msgid "Good for short descriptions, meta descriptions"
+msgstr ""
+
+#: admin/partials/settings.php:220
+msgid "Long (350+ chars)"
+msgstr ""
+
+#: admin/partials/settings.php:221
+msgid "Good for full descriptions, blog content"
+msgstr ""
+
+#: admin/partials/settings.php:232
+msgid "The maximum number of characters for this content type."
+msgstr ""
+
+#: admin/partials/settings.php:254
+msgid "characters"
+msgstr ""
+
+#: admin/partials/settings.php:263
+msgid "Recommended for short content like titles or alt text."
+msgstr ""
+
+#: admin/partials/settings.php:265
+msgid "Recommended for medium-length content like meta descriptions."
+msgstr ""
+
+#: admin/partials/settings.php:267
+msgid "Recommended for detailed content like full product descriptions."
+msgstr ""
+
+#: admin/partials/settings.php:270
+msgid "Default: %d characters. %s"
+msgstr ""
+
+#: admin/partials/settings.php:280
+msgid "Content Field Settings"
+msgstr ""
+
+#: admin/partials/settings.php:282
+msgid "Choose which content fields to generate for each content type. Disable fields you don't need to save tokens."
+msgstr ""
+
+#: admin/partials/settings.php:326
+msgid "Configure content generation for WooCommerce products."
+msgstr ""
+
+#: admin/partials/settings.php:329
+msgid "Configure content generation for product categories."
+msgstr ""
+
+#: admin/partials/settings.php:332
+msgid "Configure content generation for blog posts."
+msgstr ""
+
+#: admin/partials/settings.php:335
+msgid "Configure content generation for WordPress pages."
+msgstr ""
+
+#: admin/partials/settings.php:338
+msgid "Configure content generation for media images."
+msgstr ""
+
+#: admin/partials/settings.php:358
+msgid "Toggle to enable or disable this field for content generation."
+msgstr ""
+
+#: admin/partials/settings.php:369
+msgid "The main title of the content."
+msgstr ""
+
+#: admin/partials/settings.php:372
+msgid "The full detailed description."
+msgstr ""
+
+#: admin/partials/settings.php:375
+msgid "A brief summary of the content."
+msgstr ""
+
+#: admin/partials/settings.php:378
+msgid "SEO-optimized title for search engines."
+msgstr ""
+
+#: admin/partials/settings.php:381
+msgid "SEO-optimized description for search results."
+msgstr ""
+
+#: admin/partials/settings.php:385
+msgid "Alternative text for images for accessibility and SEO."
+msgstr ""
+
+#: admin/partials/settings.php:388
+msgid "Content for this field."
+msgstr ""
+
+#: admin/partials/settings.php:396
+msgid "Maximum Length:"
+msgstr ""
+
+#: admin/partials/settings.php:415
+msgid "chars"
+msgstr ""
+
+#: admin/partials/settings.php:423
+msgid "No fields configured for this content type."
+msgstr ""
+
+#: admin/partials/settings.php:433
+msgid "Advanced Settings"
+msgstr ""
+
+#: admin/partials/settings.php:435
+msgid "Configure advanced plugin settings. These options are primarily for troubleshooting and development."
+msgstr ""
+
+#: admin/partials/settings.php:444
+msgid "Debug Mode"
+msgstr ""
+
+#: admin/partials/settings.php:446
+msgid "Logs detailed information about API requests and responses for troubleshooting."
+msgstr ""
+
+#: admin/partials/settings.php:452
+msgid "Enable debug mode to log API requests and responses. This is useful for troubleshooting issues with content generation."
+msgstr ""
+
+#: admin/partials/settings.php:455
+msgid "Debug logs will be stored in:"
+msgstr ""
+
+#: admin/partials/settings.php:463
+msgid "Cache Settings"
+msgstr ""
+
+#: admin/partials/settings.php:464
+msgid "Manage the plugin's content cache to improve performance."
+msgstr ""
+
+#: admin/partials/settings.php:470
+msgid "The plugin caches generated content to improve performance and reduce API usage."
+msgstr ""
+
+#: admin/partials/settings.php:474
+msgid "Clear Content Cache"
+msgstr ""
+
+#: admin/partials/settings.php:483
+msgid "Token Usage"
+msgstr ""
+
+#: admin/partials/settings.php:485
+msgid "Monitor your token usage and purchase additional tokens when needed."
+msgstr ""
+
+#: admin/partials/settings.php:496
+msgid "Available Tokens"
+msgstr ""
+
+#: admin/partials/settings.php:513
+msgid "Used"
+msgstr ""
+
+#: admin/partials/settings.php:517
+msgid "Total"
+msgstr ""
+
+#: admin/partials/settings.php:525
+msgid "Purchase More Tokens"
+msgstr ""
+
+#: admin/partials/settings.php:532
+msgid "Token Usage"
+msgstr ""
+
+#: admin/partials/settings.php:537
+msgid "Content Generated"
+msgstr ""
+
+#: admin/partials/settings.php:539
+msgid "fields"
+msgstr ""
+
+#: admin/partials/settings.php:542
+msgid "Products Enhanced"
+msgstr ""
+
+#: admin/partials/settings.php:544
+msgid "products"
+msgstr ""
+
+#: admin/partials/settings.php:549
+msgid "Token usage varies based on the AI model, content length, and complexity."
+msgstr ""
+
+#: admin/partials/settings.php:552
+msgid "Estimated average token usage:"
+msgstr ""
+
+#: admin/partials/settings.php:555
+msgid "Short description: ~500 tokens"
+msgstr ""
+
+#: admin/partials/settings.php:556
+msgid "Full description: ~1,500 tokens"
+msgstr ""
+
+#: admin/partials/settings.php:557
+msgid "SEO metadata: ~300 tokens"
+msgstr ""
+
+#: includes/class-build360-ai-settings.php:59
+msgid "GPT-4o (Latest)"
+msgstr ""
+
+#: includes/class-build360-ai-settings.php:60
+msgid "GPT-4"
+msgstr ""
+
+#: includes/class-build360-ai-settings.php:61
+msgid "GPT-4 Turbo"
+msgstr ""
+
+#: includes/class-build360-ai-settings.php:62
+msgid "GPT-3.5 Turbo"
+msgstr ""
+
+#: includes/class-build360-ai-settings.php:63
+msgid "Claude 3 Opus"
+msgstr ""
+
+#: includes/class-build360-ai-settings.php:64
+msgid "Claude 3 Sonnet"
+msgstr ""
+
+#: includes/class-build360-ai-settings.php:65
+msgid "Claude 3 Haiku"
+msgstr ""
+
+#: includes/class-build360-ai-settings.php:66
+msgid "Gemini Pro"
+msgstr ""
+
+#: includes/class-build360-ai-settings.php:67
+msgid "Llama 3"
+msgstr ""
+
+#: includes/class-build360-ai-settings.php:78
+msgid "Formal"
+msgstr ""
+
+#: includes/class-build360-ai-settings.php:79
+msgid "Casual"
+msgstr ""
+
+#: includes/class-build360-ai-settings.php:80
+msgid "Professional"
+msgstr ""
+
+#: includes/class-build360-ai-settings.php:81
+msgid "Friendly"
+msgstr ""
+
+#: includes/class-build360-ai-settings.php:183
+msgid "Product Content"
+msgstr ""
+
+#: includes/class-build360-ai-settings.php:186
+msgid "Product Title"
+msgstr ""
+
+#: includes/class-build360-ai-settings.php:190
+msgid "Product Description"
+msgstr ""
+
+#: includes/class-build360-ai-settings.php:194
+msgid "Short Description"
+msgstr ""
+
+#: includes/class-build360-ai-settings.php:198
+msgid "Meta Title"
+msgstr ""
+
+#: includes/class-build360-ai-settings.php:202
+msgid "Meta Description"
+msgstr ""
+
+#: includes/class-build360-ai-settings.php:206
+msgid "Image Alt Text"
+msgstr ""
+
+#: includes/class-build360-ai-settings.php:212
+msgid "Category Content"
+msgstr ""
+
+#: includes/class-build360-ai-settings.php:215
+msgid "Category Title"
+msgstr ""
+
+#: includes/class-build360-ai-settings.php:219
+msgid "Category Description"
+msgstr ""

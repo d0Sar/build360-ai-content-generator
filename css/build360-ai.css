@@ -1,0 +1,167 @@
+/* Meta Box Styles */
+.build360-ai-meta-box {
+    margin: 10px 0;
+}
+
+.build360-ai-meta-box-header {
+    margin-bottom: 15px;
+}
+
+.build360-ai-meta-box-content {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    padding: 20px;
+}
+
+.build360-ai-field-group {
+    margin-bottom: 20px;
+}
+
+.build360-ai-field-group:last-child {
+    margin-bottom: 0;
+}
+
+.build360-ai-field-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.build360-ai-field-options {
+    margin-top: 10px;
+}
+
+.build360-ai-field-options label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: normal;
+}
+
+.build360-ai-field-options input[type="checkbox"] {
+    margin-right: 5px;
+}
+
+/* Generated Content Styles */
+.build360-ai-content-block {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f0f6fc;
+    border: 1px solid #c5d9ed;
+    border-radius: 3px;
+}
+
+.build360-ai-content-block h4 {
+    margin: 0 0 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #c5d9ed;
+    font-size: 14px;
+    color: #1d2327;
+}
+
+.build360-ai-content-preview {
+    position: relative;
+}
+
+.build360-ai-content-preview pre {
+    margin: 0;
+    padding: 10px;
+    background: #fff;
+    border: 1px solid #dcdcde;
+    border-radius: 2px;
+    font-family: Consolas, Monaco, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.build360-ai-copy-content {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+}
+
+.build360-ai-content-preview:hover .build360-ai-copy-content {
+    opacity: 1;
+}
+
+/* Loading States */
+.build360-ai-meta-box .spinner {
+    float: none;
+    margin: 0 10px;
+    visibility: visible;
+    opacity: 0;
+}
+
+.build360-ai-meta-box .spinner.is-active {
+    opacity: 1;
+}
+
+/* Notices */
+.build360-ai-meta-box .notice {
+    margin: 15px 0;
+    padding: 10px;
+}
+
+.build360-ai-meta-box .notice p {
+    margin: 0;
+    padding: 0;
+}
+
+/* Generation Status */
+.generation-status {
+    margin: 15px 0;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.generation-status.success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.generation-status.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c2c7;
+}
+
+.build360-ai-meta-box .notice ul {
+    margin: 10px 0 0 20px;
+    list-style: disc;
+}
+
+/* Responsive Styles */
+@media screen and (max-width: 782px) {
+    .build360-ai-meta-box-content {
+        padding: 15px;
+    }
+
+    .build360-ai-field-options label {
+        margin-bottom: 12px;
+    }
+
+    .build360-ai-field-options input[type="checkbox"] {
+        width: 25px;
+        height: 25px;
+    }
+
+    .build360-ai-field-options input[type="checkbox"]:checked:before {
+        width: 21px;
+        height: 21px;
+        margin: 1px;
+    }
+
+    .build360-ai-copy-content {
+        opacity: 1;
+        position: static;
+        margin-top: 10px;
+        width: 100%;
+    }
+}

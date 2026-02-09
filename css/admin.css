@@ -1,0 +1,1115 @@
+/* WooCommerce Notice */
+.woocommerce-message {
+    margin: 0 0 24px;
+    border-left-color: #cc1818;
+    background: #fff;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+/* General Layout */
+.app-container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 0 20px;
+}
+
+.content-wrapper {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    padding: 32px;
+}
+
+/* Header Section */
+.header-section {
+    margin-bottom: 32px;
+}
+
+.header-primary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.page-title {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 600;
+    color: #1d2327;
+    line-height: 1.3;
+}
+
+.header-actions {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+/* Search Box */
+.search-box {
+    position: relative;
+    min-width: 300px;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 10px 16px 10px 44px;
+    border: 2px solid #dcdcde;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    background: #f6f7f7;
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: #2271b1;
+    background: #fff;
+    box-shadow: 0 0 0 1px #2271b1;
+}
+
+.search-box i {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #787c82;
+    font-size: 16px;
+    pointer-events: none;
+    transition: color 0.2s ease;
+}
+
+.search-box input:focus+i {
+    color: #2271b1;
+}
+
+/* Add Agent Button */
+.add-agent-button {
+    padding: 10px 20px !important;
+    height: auto !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    border-radius: 8px !important;
+    transition: all 0.2s ease !important;
+}
+
+.add-agent-button i {
+    font-size: 16px;
+}
+
+/* Category Filter */
+.category-filter {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+}
+
+.category-btn {
+    padding: 10px 20px;
+    border: 2px solid #dcdcde;
+    border-radius: 30px;
+    background: #fff;
+    color: #1d2327;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.category-btn:before {
+    content: '';
+    display: block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.5;
+}
+
+.category-btn:hover {
+    background: #f6f7f7;
+    border-color: #2271b1;
+    color: #2271b1;
+}
+
+.category-btn.active {
+    background: #2271b1;
+    color: #fff;
+    border-color: #2271b1;
+}
+
+.category-btn.active:before {
+    opacity: 1;
+}
+
+/* Tokens Info */
+.tokens-info {
+    background: linear-gradient(to right, #f0f6fc, #f6f7f7);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.tokens-info-container {
+    flex: 1;
+    margin-right: 32px;
+}
+
+.tokens-text {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.tokens-title {
+    font-size: 15px;
+    font-weight: 500;
+    color: #1d2327;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tokens-count {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1d2327;
+    font-feature-settings: "tnum";
+    font-variant-numeric: tabular-nums;
+}
+
+.tokens-progress {
+    height: 10px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 6px;
+    margin-bottom: 16px;
+    overflow: hidden;
+}
+
+.tokens-progress-bar {
+    height: 100%;
+    background: linear-gradient(to right, #2271b1, #72aee6);
+    border-radius: 6px;
+    transition: width 0.3s ease;
+}
+
+.tokens-stats {
+    display: flex;
+    gap: 32px;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.stat-label {
+    font-size: 13px;
+    color: #646970;
+    font-weight: 500;
+}
+
+.stat-value {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1d2327;
+    font-feature-settings: "tnum";
+    font-variant-numeric: tabular-nums;
+}
+
+.upgrade-button {
+    padding: 10px 24px !important;
+    height: auto !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    border-radius: 8px !important;
+    background: #fff !important;
+    border-color: #2271b1 !important;
+    color: #2271b1 !important;
+    transition: all 0.2s ease !important;
+}
+
+.upgrade-button:hover {
+    background: #f0f6fc !important;
+    transform: translateY(-1px);
+}
+
+.upgrade-button i {
+    font-size: 16px;
+    transition: transform 0.2s ease;
+}
+
+.upgrade-button:hover i {
+    transform: translateX(4px);
+}
+
+/* Agents List */
+.agents-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+    margin-top: 24px;
+}
+
+.agent-card {
+    background: #fff;
+    border: 1px solid #dcdcde;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.agent-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.agent-header {
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #dcdcde;
+}
+
+.agent-icon {
+    width: 40px;
+    height: 40px;
+    background: #f0f6fc;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.agent-icon i {
+    font-size: 20px;
+    color: #2271b1;
+}
+
+.agent-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #646970;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #dcdcde;
+}
+
+.agent-status.active .status-dot {
+    background: #00a32a;
+}
+
+.agent-content {
+    padding: 16px;
+}
+
+.agent-name {
+    margin: 0 0 8px;
+    font-size: 16px;
+    color: #1d2327;
+}
+
+.agent-model {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #646970;
+    margin-bottom: 12px;
+}
+
+.agent-description {
+    font-size: 13px;
+    color: #50575e;
+    margin: 0 0 16px;
+    line-height: 1.4;
+}
+
+.agent-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 12px;
+    background: #f6f7f7;
+    border-radius: 4px;
+}
+
+.stat {
+    text-align: center;
+}
+
+.stat-value {
+    display: block;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1d2327;
+    margin-bottom: 4px;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #646970;
+}
+
+.agent-actions {
+    padding: 16px;
+    display: flex;
+    gap: 8px;
+    border-top: 1px solid #dcdcde;
+}
+
+.agent-actions button {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+    background: #f6f7f7;
+    color: #1d2327;
+    cursor: pointer;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.agent-actions button:hover {
+    background: #f0f0f1;
+}
+
+.agent-actions .delete-agent {
+    color: #d63638;
+}
+
+.agent-actions .delete-agent:hover {
+    background: #fcf0f1;
+    border-color: #d63638;
+}
+
+/* Empty State */
+.no-agents {
+    text-align: center;
+    padding: 48px 24px;
+}
+
+.no-agents-icon {
+    width: 64px;
+    height: 64px;
+    background: #f0f6fc;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+}
+
+.no-agents-icon i {
+    font-size: 32px;
+    color: #2271b1;
+}
+
+.no-agents h3 {
+    margin: 0 0 8px;
+    font-size: 18px;
+    color: #1d2327;
+}
+
+.no-agents p {
+    margin: 0 0 24px;
+    font-size: 14px;
+    color: #646970;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 160000;
+    padding: 20px;
+}
+
+.modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: #fff;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow: hidden;
+    position: relative;
+}
+
+.modal-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid #dcdcde;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 18px;
+    color: #1d2327;
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: #646970;
+    font-size: 18px;
+}
+
+.modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    max-height: calc(90vh - 130px);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #1d2327;
+}
+
+.required {
+    color: #d63638;
+}
+
+.tooltip {
+    color: #646970;
+    cursor: help;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.form-group textarea {
+    resize: vertical;
+}
+
+.range-value {
+    text-align: center;
+    font-size: 14px;
+    color: #646970;
+    margin-top: 4px;
+}
+
+.prompt-templates {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.load-template {
+    padding: 6px 12px;
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+    background: #f6f7f7;
+    color: #1d2327;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.load-template:hover {
+    background: #f0f0f1;
+}
+
+.modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid #dcdcde;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+/* Tooltips */
+[data-tooltip] {
+    position: relative;
+}
+
+[data-tooltip]:before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 8px 12px;
+    background: #1d2327;
+    color: #fff;
+    font-size: 12px;
+    border-radius: 4px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+}
+
+[data-tooltip]:hover:before {
+    opacity: 1;
+    visibility: visible;
+    bottom: calc(100% + 8px);
+}
+
+/* Responsive */
+@media (max-width: 782px) {
+    .header-primary {
+        flex-direction: column;
+        gap: 16px;
+        align-items: stretch;
+    }
+
+    .header-actions {
+        flex-direction: column;
+    }
+
+    .search-box input {
+        width: 100%;
+    }
+
+    .category-filter {
+        overflow-x: auto;
+        padding-bottom: 8px;
+    }
+
+    .category-btn {
+        white-space: nowrap;
+    }
+
+    .tokens-info {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .tokens-info-container {
+        margin-right: 0;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Card-like layout for settings sections */
+.build360-ai-card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    margin-bottom: 25px;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.build360-ai-card h2 {
+    font-size: 1.15em;
+    font-weight: 600;
+    margin: 0 0 18px 0;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eeeeee;
+    color: #3c434a;
+}
+
+.build360-ai-section-description {
+    margin-bottom: 1.5em;
+}
+
+.build360-ai-card .form-table {
+    margin-top: 0.5em;
+}
+
+#build360-ai-agent-assignments-wrapper {
+    margin-top: 1em;
+}
+
+#build360-ai-agent-assignments-table th,
+#build360-ai-agent-assignments-table td {
+    padding: 8px 10px;
+}
+
+#build360-ai-agent-assignments-table .build360-ai-assignment-type,
+#build360-ai-agent-assignments-table .build360-ai-assignment-agent {
+    width: 100%;
+}
+
+.build360-ai-remove-assignment-row {
+    margin-left: 5px;
+}
+
+/* Modern Button Styles */
+.build360-ai-settings-wrap .button {
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out, color 0.15s ease-in-out;
+    box-sizing: border-box;
+    vertical-align: middle;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 38px;
+    padding: 0 16px;
+}
+
+/* Primary Button (Save Changes) */
+.build360-ai-settings-wrap p.submit input[type="submit"].button-primary,
+.build360-ai-settings-wrap #build360_ai_save_settings.button-primary {
+    background-color: #2271b1;
+    border-color: #2271b1;
+    color: #fff;
+    padding: 0 20px;
+    font-size: 14px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    height: 38px;
+}
+
+.build360-ai-settings-wrap p.submit input[type="submit"].button-primary:hover,
+.build360-ai-settings-wrap #build360_ai_save_settings.button-primary:hover {
+    background-color: #1d619a;
+    border-color: #1d619a;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+/* Secondary Buttons */
+.build360-ai-settings-wrap .button.button-secondary,
+.build360-ai-settings-wrap #build360_ai_test_connection,
+.build360-ai-settings-wrap #build360_ai_clear_cache,
+.build360-ai-settings-wrap #build360-ai-add-assignment-row {
+    background-color: #f0f0f1;
+    border-color: #dcdcde;
+    color: #2c3338;
+}
+
+.build360-ai-settings-wrap .button.button-secondary:hover,
+.build360-ai-settings-wrap #build360_ai_test_connection:hover,
+.build360-ai-settings-wrap #build360_ai_clear_cache:hover,
+.build360-ai-settings-wrap #build360-ai-add-assignment-row:hover {
+    background-color: #e6e6e7;
+    border-color: #c7c7c7;
+    color: #1d2327;
+}
+
+/* Specific styling for toggle password to keep it compact */
+.build360-ai-settings-wrap .build360-ai-toggle-password {
+    padding: 0 10px;
+    margin-left: 5px;
+    height: 38px;
+    line-height: 1;
+}
+
+.build360-ai-settings-wrap .build360-ai-toggle-password .dashicons {
+    margin: 0;
+    line-height: 1;
+    vertical-align: middle;
+}
+
+/* Link-style Buttons */
+.build360-ai-settings-wrap .button.button-link,
+.build360-ai-settings-wrap #build360_ai_toggle_api_details {
+    color: #2271b1;
+    text-decoration: none;
+    border: none;
+    background: none;
+    box-shadow: none;
+    padding: 8px 10px;
+}
+
+.build360-ai-settings-wrap .button.button-link:hover,
+.build360-ai-settings-wrap #build360_ai_toggle_api_details:hover {
+    color: #1d619a;
+    text-decoration: underline;
+    background: none;
+}
+
+/* Table action buttons (Remove button) */
+.build360-ai-settings-wrap #build360-ai-agent-assignments-table .build360-ai-remove-assignment-row {
+    background-color: transparent;
+    border: 1px solid #d63638;
+    color: #d63638;
+    padding: 0 10px;
+    font-size: 13px;
+    height: 36px;
+}
+
+.build360-ai-settings-wrap #build360-ai-agent-assignments-table .build360-ai-remove-assignment-row:hover {
+    background-color: #fbeaea;
+    border-color: #b02a2c;
+    color: #b02a2c;
+}
+
+/* Align dashicons in buttons properly */
+.build360-ai-settings-wrap .button .dashicons {
+    vertical-align: text-bottom;
+    margin-right: 4px;
+}
+
+/* Modern Table Styles (Agent Assignments) */
+.build360-ai-settings-wrap #build360-ai-agent-assignments-table {
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    margin-top: 1em;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.build360-ai-settings-wrap #build360-ai-agent-assignments-table th {
+    background-color: #f8f9fa;
+    padding: 12px 15px;
+    font-weight: 600;
+    color: #4A5568;
+    border-bottom: 2px solid #e0e0e0;
+    text-align: left;
+}
+
+.build360-ai-settings-wrap #build360-ai-agent-assignments-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #f1f1f1;
+    color: #2d3748;
+    vertical-align: middle;
+}
+
+.build360-ai-settings-wrap #build360-ai-agent-assignments-table tr:last-child td {
+    border-bottom: none;
+}
+
+.build360-ai-settings-wrap #build360-ai-agent-assignments-table tbody tr:hover td {
+    background-color: #f9fafb;
+}
+
+/* Modern Input & Select Styles */
+.build360-ai-settings-wrap .form-table input[type="text"],
+.build360-ai-settings-wrap .form-table input[type="password"],
+.build360-ai-settings-wrap .form-table input[type="url"],
+.build360-ai-settings-wrap .form-table input[type="email"],
+.build360-ai-settings-wrap .form-table input[type="number"],
+.build360-ai-settings-wrap .form-table select,
+.build360-ai-settings-wrap #build360-ai-agent-assignments-table select {
+    border: 1px solid #d2d6dc;
+    border-radius: 6px;
+    padding: 0 12px;
+    font-size: 14px;
+    color: #3c434a;
+    background-color: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) inset;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    min-width: 250px;
+    height: 38px;
+    box-sizing: border-box;
+    line-height: normal;
+}
+
+.build360-ai-settings-wrap .form-table input[type="text"]:focus,
+.build360-ai-settings-wrap .form-table input[type="password"]:focus,
+.build360-ai-settings-wrap .form-table input[type="url"]:focus,
+.build360-ai-settings-wrap .form-table input[type="email"]:focus,
+.build360-ai-settings-wrap .form-table input[type="number"]:focus,
+.build360-ai-settings-wrap .form-table select:focus,
+.build360-ai-settings-wrap #build360-ai-agent-assignments-table select:focus {
+    border-color: #2271b1;
+    box-shadow: 0 0 0 1px #2271b1, 0 1px 2px rgba(0, 0, 0, 0.03) inset;
+    outline: none;
+}
+
+.build360-ai-settings-wrap .form-table td .description {
+    font-size: 13px;
+    color: #50575e;
+    margin-top: 6px;
+}
+
+.build360-ai-settings-wrap .regular-text {
+    width: 100%;
+    max-width: 400px;
+}
+
+.build360-ai-settings-wrap .form-table th label {
+    font-weight: 600;
+    color: #3c434a;
+}
+
+.build360-ai-settings-wrap .form-table th .build360-ai-required-field {
+    color: #d63638;
+    margin-left: 2px;
+    font-weight: normal;
+}
+
+/* Token Usage Section Styling - REVISED (for settings page) */
+/* These styles are intended for the token display on the admin settings page */
+/* They use classes like .build360-ai-token-section, .build360-ai-token-dashboard etc. */
+
+.build360-ai-token-section {
+    /* Styles for the overall section if needed, inherits from .build360-ai-card */
+}
+
+.build360-ai-token-section h2 {
+    font-size: 1.5em;
+    margin-top: 0;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.build360-ai-token-section h2 .dashicons {
+    margin-right: 8px;
+}
+
+.build360-ai-token-dashboard {
+    display: flex;
+    flex-wrap: wrap;
+    /* Allow wrapping for smaller screens */
+    gap: 20px;
+    /* Space between the two cards */
+    margin-top: 15px;
+}
+
+.build360-ai-token-card,
+.build360-ai-token-usage-card {
+    background-color: #fff;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
+    border-radius: 4px;
+    flex: 1;
+    /* Allow cards to grow */
+    min-width: 300px;
+    /* Minimum width before wrapping */
+    display: flex;
+    flex-direction: column;
+    /* Stack header, body, footer */
+}
+
+.build360-ai-token-header {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+    background-color: #f9f9f9;
+}
+
+.build360-ai-token-title {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #333;
+}
+
+.build360-ai-token-body {
+    padding: 15px;
+    flex-grow: 1;
+    /* Body takes available space */
+}
+
+.build360-ai-token-count {
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.build360-ai-token-count .dashicons {
+    font-size: 2em;
+    color: #2271b1;
+    vertical-align: middle;
+    margin-right: 10px;
+}
+
+.build360-ai-token-count .build360-ai-token-number {
+    font-size: 2.2em;
+    font-weight: 700;
+    color: #2271b1;
+    vertical-align: middle;
+}
+
+.build360-ai-token-progress {
+    height: 10px;
+    /* Slimmer progress bar */
+    background-color: #e9ecef;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 15px;
+}
+
+.build360-ai-token-progress-bar {
+    height: 100%;
+    background-color: #2271b1;
+    /* WordPress Blue */
+    transition: width 0.6s ease;
+    /* Text inside progress bar can be added via JS if needed */
+    /* Ensure it has color if text is added, e.g., color: white; */
+}
+
+.build360-ai-token-stats {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9em;
+    color: #555;
+    padding: 0 5px;
+    /* Slight padding for stats */
+}
+
+.build360-ai-token-stat-label {
+    display: block;
+    font-size: 0.9em;
+    color: #777;
+}
+
+.build360-ai-token-stat-value {
+    font-weight: 600;
+}
+
+.build360-ai-token-footer {
+    padding: 12px 15px;
+    border-top: 1px solid #eee;
+    text-align: center;
+    /* Center the button */
+    background-color: #f9f9f9;
+}
+
+.build360-ai-token-footer .button-primary .dashicons {
+    margin-right: 5px;
+    vertical-align: text-bottom;
+}
+
+/* Styling for the second card (Token Usage Details) */
+.build360-ai-token-usage-stats {
+    margin-bottom: 15px;
+}
+
+.build360-ai-token-usage-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px dashed #f0f0f0;
+}
+
+.build360-ai-token-usage-stat:last-child {
+    border-bottom: none;
+}
+
+.build360-ai-token-usage-label {
+    font-weight: 500;
+    color: #444;
+}
+
+.build360-ai-token-usage-value {
+    font-weight: 600;
+    color: #2271b1;
+    font-size: 1.1em;
+    margin-left: auto;
+    /* Push value to the right */
+    padding-left: 10px;
+    /* Space before value */
+}
+
+.build360-ai-token-usage-desc {
+    font-size: 0.85em;
+    color: #777;
+    margin-left: 5px;
+}
+
+.build360-ai-token-usage-info p.description {
+    font-size: 0.9em;
+    color: #555;
+    margin-bottom: 8px;
+    line-height: 1.5;
+}
+
+.build360-ai-token-usage-info ul.build360-ai-token-usage-list {
+    list-style: disc;
+    padding-left: 20px;
+    font-size: 0.9em;
+    color: #555;
+    margin-top: 10px;
+}
+
+.build360-ai-token-usage-list li {
+    margin-bottom: 5px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 960px) {
+
+    /* Adjust breakpoint as needed */
+    .build360-ai-token-dashboard {
+        flex-direction: column;
+    }
+
+    .build360-ai-token-card,
+    .build360-ai-token-usage-card {
+        min-width: 100%;
+        /* Full width on smaller screens */
+    }
+}
+
+#build360-ai-review-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 99;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    width: 100vw;
+    height: 100vh;
+}
+
+#build360-ai-review-modal .modal-overlay {
+    width: 100vw;
+    height: 100vh;
+    position: absolute;
+    background: #00000075;
+}

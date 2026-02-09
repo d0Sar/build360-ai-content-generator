@@ -1,0 +1,659 @@
+/**
+ * Build360 AI Content Generator Admin Styles
+ */
+
+/* General */
+.build360-ai-dashboard,
+.build360-ai-products,
+.build360-ai-settings {
+    margin-top: 20px;
+}
+
+.build360-ai-box {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+    margin-bottom: 20px;
+    padding: 15px;
+}
+
+/* Welcome Panel */
+.build360-ai-welcome-panel {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+    margin: 16px 0;
+    padding: 24px;
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+.build360-ai-welcome-panel h2 {
+    margin: 0;
+    font-size: 21px;
+    font-weight: 400;
+    line-height: 1.2;
+}
+
+.build360-ai-welcome-panel .about-description {
+    margin: 1em 0;
+    font-size: 16px;
+    line-height: 1.5;
+    color: #646970;
+}
+
+.welcome-panel-column-container {
+    clear: both;
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0 -15px;
+}
+
+.welcome-panel-column {
+    padding: 0 15px;
+    flex: 1;
+    min-width: 200px;
+    max-width: 300px;
+}
+
+/* Token Balance */
+.build360-ai-token-balance {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f0f6fc;
+    border: 1px solid #c5d9ed;
+    border-radius: 3px;
+}
+
+.build360-ai-token-count {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.build360-ai-token-number {
+    font-size: 24px;
+    font-weight: 600;
+    color: #2271b1;
+}
+
+.build360-ai-token-label {
+    color: #646970;
+}
+
+.dashicons-token:before {
+    content: "\f524";
+}
+
+/* Dashboard Sections */
+.build360-ai-dashboard-sections {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0 -10px;
+}
+
+.build360-ai-dashboard-section {
+    flex: 1;
+    min-width: 300px;
+    padding: 0 10px;
+    margin-bottom: 20px;
+}
+
+.build360-ai-dashboard-section-content {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+    padding: 15px;
+}
+
+/* Tips & Tricks */
+.build360-ai-tips {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.build360-ai-tip {
+    background: #f8f8f8;
+    border-left: 4px solid #007cba;
+    padding: 10px 15px;
+}
+
+.build360-ai-tip h3 {
+    margin-top: 0;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+}
+
+.build360-ai-tip h3 .dashicons {
+    margin-right: 8px;
+    color: #007cba;
+}
+
+.build360-ai-tip p {
+    margin-bottom: 0;
+}
+
+/* Products Page */
+.build360-ai-products-content {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0 -10px;
+}
+
+.build360-ai-products-bulk,
+.build360-ai-products-list {
+    padding: 0 10px;
+    margin-bottom: 20px;
+}
+
+.build360-ai-products-bulk {
+    flex: 1;
+    min-width: 300px;
+    max-width: 400px;
+}
+
+.build360-ai-products-list {
+    flex: 2;
+    min-width: 500px;
+}
+
+.build360-ai-field-group {
+    margin-bottom: 15px;
+}
+
+.build360-ai-field-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.build360-ai-field-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 5px;
+}
+
+.build360-ai-field-options label {
+    font-weight: normal;
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 0;
+}
+
+.build360-ai-field-options input[type="checkbox"] {
+    margin-right: 5px;
+}
+
+.build360-ai-products-header {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+}
+
+.build360-ai-bulk-results {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f8f8f8;
+    border: 1px solid #ddd;
+}
+
+.build360-ai-progress-bar {
+    height: 20px;
+    background-color: #e0e0e0;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+
+.build360-ai-progress-bar-inner {
+    height: 100%;
+    background-color: #007cba;
+    width: 0;
+    transition: width 0.3s ease;
+}
+
+.build360-ai-result-errors {
+    margin-top: 10px;
+    color: #d63638;
+}
+
+/* Product List */
+.build360-ai-product-list {
+    margin: 0;
+    padding: 0;
+}
+
+.build360-ai-product-list li {
+    background: #f8f8f8;
+    border: 1px solid #e5e5e5;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    padding: 15px;
+    transition: all 0.2s ease;
+}
+
+.build360-ai-product-list li.build360-ai-generated {
+    border-left: 4px solid #46b450;
+}
+
+.build360-ai-product-info {
+    margin-bottom: 10px;
+}
+
+.build360-ai-product-info h3 {
+    margin: 0 0 5px;
+    font-size: 16px;
+}
+
+.build360-ai-product-categories {
+    color: #666;
+    font-size: 12px;
+    margin-bottom: 5px;
+}
+
+.build360-ai-generated-badge {
+    display: inline-block;
+    background: #edfaef;
+    color: #2a8f34;
+    border-radius: 3px;
+    padding: 3px 8px;
+    font-size: 12px;
+    line-height: 1;
+}
+
+.build360-ai-product-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.build360-ai-product-generate-form {
+    margin-top: 15px;
+    padding: 15px;
+    background: #f0f0f1;
+    border-radius: 4px;
+}
+
+.build360-ai-result-message {
+    margin-top: 10px;
+}
+
+.build360-ai-result-message.error {
+    color: #d63638;
+}
+
+.build360-ai-result-message.success {
+    color: #2a8f34;
+}
+
+.build360-ai-cancel-button {
+    margin-left: 10px;
+    text-decoration: none;
+}
+
+/* Settings Page */
+.build360-ai-settings-content {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+    padding: 20px;
+}
+
+.build360-ai-settings-section {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.build360-ai-settings-section h2 {
+    margin: 0 0 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #c3c4c7;
+    font-size: 16px;
+}
+
+.build360-ai-settings-section .form-table th {
+    padding: 20px 10px 20px 0;
+    width: 200px;
+}
+
+.build360-ai-settings-section .form-table td {
+    padding: 15px 10px;
+}
+
+.build360-ai-settings-section .description {
+    margin: 5px 0 0;
+    color: #646970;
+}
+
+.build360-ai-api-test {
+    display: flex;
+    align-items: center;
+}
+
+.build360-ai-api-test .spinner {
+    float: none;
+    margin: 0 10px;
+}
+
+#build360_ai_connection_result {
+    padding: 5px 10px;
+    border-radius: 3px;
+}
+
+#build360_ai_connection_result.success {
+    background: #edfaef;
+    color: #2a8f34;
+}
+
+#build360_ai_connection_result.error {
+    background: #f8d7da;
+    color: #d63638;
+}
+
+.build360-ai-content-type {
+    background: #f8f8f8;
+    border: 1px solid #e5e5e5;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.build360-ai-content-type h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.build360-ai-field-length {
+    margin-top: 5px;
+    margin-left: 25px;
+    display: flex;
+    align-items: center;
+}
+
+.build360-ai-field-length label {
+    font-weight: normal;
+    margin-right: 10px;
+    display: inline;
+}
+
+.build360-ai-field-length .description {
+    margin-left: 10px;
+}
+
+.build360-ai-settings-actions {
+    display: flex;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.build360-ai-settings-actions .spinner {
+    float: none;
+    margin: 0 10px;
+}
+
+#build360_ai_settings_result {
+    padding: 5px 10px;
+    border-radius: 3px;
+}
+
+#build360_ai_settings_result.success {
+    background: #edfaef;
+    color: #2a8f34;
+}
+
+#build360_ai_settings_result.error {
+    background: #f8d7da;
+    color: #d63638;
+}
+
+/* Responsive */
+@media screen and (max-width: 782px) {
+    .welcome-panel-column {
+        display: block;
+        padding: 0;
+        width: 100%;
+    }
+
+    .build360-ai-dashboard-section {
+        width: 100%;
+    }
+
+    .build360-ai-products-bulk,
+    .build360-ai-products-list {
+        width: 100%;
+    }
+
+    .build360-ai-stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .build360-ai-settings-section .form-table th {
+        padding-bottom: 5px;
+    }
+
+    .build360-ai-settings-section .form-table td {
+        padding-left: 0;
+    }
+
+    .build360-ai-token-count {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+/* Card-like layout for settings sections */
+/* MOVED TO css/admin.css */
+/*
+.build360-ai-card {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
+    margin-bottom: 20px;
+    padding: 1px 12px 12px 12px;
+}
+
+.build360-ai-card h2 {
+    font-size: 1.3em;
+    margin: 1em 0;
+    padding: 0 0 0.5em 0;
+    border-bottom: 1px solid #eee;
+}
+
+.build360-ai-settings-section {
+
+}
+
+.build360-ai-section-description {
+    margin-bottom: 1.5em;
+}
+
+.build360-ai-card .form-table {
+    margin-top: 0.5em;
+}
+
+#build360-ai-agent-assignments-wrapper {
+    margin-top: 1em;
+}
+
+#build360-ai-agent-assignments-table th,
+#build360-ai-agent-assignments-table td {
+    padding: 8px 10px;
+}
+
+#build360-ai-agent-assignments-table .build360-ai-assignment-type,
+#build360-ai-agent-assignments-table .build360-ai-assignment-agent {
+    width: 100%;
+}
+
+.build360-ai-remove-assignment-row {
+    margin-left: 5px;
+}
+*/
+
+/* Build360 AI Dashboard Styles */
+.build360-ai-dashboard-wrap .metabox-holder {
+    grid-template-columns: 1fr;
+}
+
+.build360-ai-dashboard-wrap .welcome-panel {
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.build360-ai-dashboard-wrap .welcome-panel .card-header {
+    font-size: 1.5em;
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+.build360-ai-dashboard-wrap .grid-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    /* Two equal columns */
+    gap: 20px;
+    /* Space between columns and rows of cards */
+}
+
+.build360-ai-dashboard-wrap .grid-column {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    /* Space between cards in a column */
+}
+
+/* Card Styles - already partially defined, enhancing for dashboard */
+.build360-ai-card {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
+}
+
+.build360-ai-card .card-header {
+    font-size: 1.2em;
+    padding: 12px 15px;
+    margin: 0;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: center;
+}
+
+.build360-ai-card .card-header .dashicons {
+    margin-right: 8px;
+}
+
+.build360-ai-card .card-content {
+    padding: 15px;
+    line-height: 1.6;
+}
+
+.build360-ai-card .card-content h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1.1em;
+}
+
+.build360-ai-card .action-buttons.vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.build360-ai-card .action-buttons.vertical .button {
+    width: 100%;
+    box-sizing: border-box;
+    /* Ensure padding doesn't expand width */
+    text-align: left;
+}
+
+.build360-ai-card .action-buttons.vertical .button .dashicons {
+    margin-right: 5px;
+    vertical-align: middle;
+}
+
+.build360-ai-card .api-status-section strong,
+.build360-ai-card .token-count {
+    font-weight: 600;
+}
+
+.build360-ai-card .status-ok .dashicons,
+.build360-ai-card .status-error .dashicons {
+    margin-right: 4px;
+}
+
+.build360-ai-card .status-ok {
+    color: #228b22;
+    /* ForestGreen */
+}
+
+.build360-ai-card .status-error {
+    color: #dc3232;
+    /* WordPress error red */
+}
+
+.build360-ai-card .token-count.available {
+    color: #0073aa;
+    /* WordPress blue */
+}
+
+.build360-ai-card .token-count.used {
+    color: #d63638;
+}
+
+.build360-ai-card hr {
+    border: 0;
+    border-top: 1px solid #eee;
+    margin: 15px 0;
+}
+
+.build360-ai-card .activity-list {
+    list-style: none;
+    padding-left: 0;
+    margin-top: 0;
+}
+
+.build360-ai-card .activity-list li {
+    padding: 5px 0;
+    border-bottom: 1px dashed #eee;
+    display: flex;
+    align-items: center;
+}
+
+.build360-ai-card .activity-list li:last-child {
+    border-bottom: none;
+}
+
+.build360-ai-card .activity-list li .dashicons {
+    margin-right: 8px;
+    color: #72777c;
+}
+
+.build360-ai-card .no-activity .dashicons {
+    margin-right: 8px;
+    color: #72777c;
+    vertical-align: middle;
+}
+
+.build360-ai-card .stat-number {
+    font-size: 1.3em;
+    font-weight: 600;
+}
+
+.build360-ai-card .description {
+    font-size: 0.9em;
+    color: #666;
+    margin-top: 5px;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 782px) {
+    .build360-ai-dashboard-wrap .grid-container {
+        grid-template-columns: 1fr;
+        /* Stack columns */
+    }
+}

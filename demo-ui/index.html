@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product Description Genius</title>
+  <meta name="description" content="Product Description Generator">
+  <meta name="author" content="Product Description Genius">
+  <meta property="og:image" content="./images/og-image.png">
+  <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="app-container">
+    <main class="main-content">
+      <div class="content-wrapper">
+        <div class="header-actions">
+          <button class="back-button">
+            <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+          </button>
+          <h1 class="page-title">Product Description Genius</h1>
+        </div>
+
+        <!-- Tokens Info -->
+        <div class="tokens-info">
+          <div class="tokens-info-container">
+            <div class="tokens-text">
+              <div class="tokens-title">Available Tokens</div>
+              <div class="tokens-count">750,000 / 1,000,000</div>
+            </div>
+            <div class="tokens-progress">
+              <div class="tokens-progress-bar" style="width: 75%;"></div>
+            </div>
+          </div>
+          <button class="upgrade-button">Upgrade Now</button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+          <div class="tabs-header">
+            <button class="tab-button active" data-tab="editor">Editor</button>
+            <button class="tab-button" data-tab="settings">Settings</button>
+          </div>
+          
+          <div class="tab-content">
+            <!-- Editor Tab -->
+            <div class="tab-pane active" id="editor-tab">
+              <!-- Content Type & Keywords Section -->
+              <div class="content-filter-section">
+                <div class="filter-row">
+                  <div class="filter-group">
+                    <label>Content Type <span class="info-icon" title="Επιλέξτε τύπο περιεχομένου">(?)</span></label>
+                    <select id="content-type-select">
+                      <option value="product">Product Description</option>
+                      <option value="product-category">Product Category</option>
+                      <option value="post">Blog Post</option>
+                      <option value="page">Page</option>
+                      <option value="image">Image</option>
+                    </select>
+                  </div>
+                  <div class="filter-group keywords-group">
+                    <label>Keywords (comma separated) <span class="info-icon" title="Λέξεις-κλειδιά για το περιεχόμενο">(?)</span></label>
+                    <input type="text" id="keywords-input" placeholder="e.g., comfortable, cotton, casual, everyday">
+                  </div>
+                </div>
+                
+                <!-- Search and Field Selection -->
+                <div class="search-field-section">
+                  <div class="search-container">
+                    <label>Αναζήτηση</label>
+                    <div class="search-input-container">
+                      <i class="fa-solid fa-search"></i>
+                      <input type="text" id="content-search-input" placeholder="Αναζήτηση στοιχείων...">
+                    </div>
+                  </div>
+                  <div class="field-filters">
+                    <button class="filter-toggle-button">
+                      <i class="fa-solid fa-filter"></i> Φίλτρα
+                    </button>
+                    <div class="field-checkboxes">
+                      <label class="field-checkbox">
+                        <input type="checkbox" id="field-name" checked> Όνομα
+                      </label>
+                      <label class="field-checkbox">
+                        <input type="checkbox" id="field-description" checked> Περιγραφή
+                      </label>
+                      <label class="field-checkbox">
+                        <input type="checkbox" id="field-short-description" checked> Σύντομη Περιγραφή
+                      </label>
+                      <label class="field-checkbox">
+                        <input type="checkbox" id="field-meta-description" checked> Meta Περιγραφή
+                      </label>
+                      <label class="field-checkbox">
+                        <input type="checkbox" id="field-image-alt" checked> Image Alt
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Progress Bar -->
+                <div class="generation-progress-small" id="generation-progress-small">
+                  <div class="progress-label">Πρόοδος Δημιουργίας</div>
+                  <div class="progress-percent">81%</div>
+                  <div class="progress-bar-container-small">
+                    <div class="progress-bar-small" style="width: 81%;"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="editor-actions">
+                <div class="search-filter">
+                  <div class="search-box">
+                    <i class="fa-solid fa-search"></i>
+                    <input type="text" placeholder="Search products..." id="search-input">
+                  </div>
+                  <div class="filter-dropdown">
+                    <button class="filter-button">
+                      <i class="fa-solid fa-filter"></i> Filter
+                    </button>
+                    <div class="filter-menu hidden">
+                      <label class="filter-item">
+                        <input type="checkbox" name="filter-generated"> Generated
+                      </label>
+                      <label class="filter-item">
+                        <input type="checkbox" name="filter-not-generated"> Not Generated
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                <div class="action-buttons">
+                  <button class="action-button generate-button">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Generate Selected
+                  </button>
+                </div>
+              </div>
+
+              <div class="products-table-container">
+                <table class="products-table">
+                  <thead>
+                    <tr>
+                      <th>
+                        <input type="checkbox" id="select-all">
+                      </th>
+                      <th>Product Name</th>
+                      <!-- Δυναμικές στήλες θα προστίθενται εδώ με JavaScript -->
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="products-list">
+                    <!-- Products will be inserted here by JavaScript -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div class="tab-pane" id="settings-tab">
+              <div class="settings-container">
+                <!-- Ρυθμίσεις API -->
+                <div class="settings-section">
+                  <h2 class="settings-title">Ρυθμίσεις API</h2>
+                  <p class="settings-description">Διαμορφώστε τις ρυθμίσεις API για να συνδεθείτε με την υπηρεσία AI.</p>
+                  
+                  <div class="settings-form-group">
+                    <label for="api-key">API Key <span class="info-icon" title="Το κλειδί API για την υπηρεσία OpenAI">(?)</span></label>
+                    <input type="password" id="api-key" placeholder="Εισάγετε το API key σας">
+                  </div>
+                  
+                  <div class="settings-form-group">
+                    <label for="domain-name">Domain Name <span class="info-icon" title="Το domain του site σας">(?)</span></label>
+                    <input type="text" id="domain-name" placeholder="example.com">
+                  </div>
+                  
+                  <div class="settings-actions-group">
+                    <button class="settings-action-button danger-button">Απενεργοποίηση</button>
+                    <button class="settings-action-button primary-button">Δοκιμή Σύνδεσης</button>
+                  </div>
+                </div>
+                
+                <!-- Επιλογές Περιεχομένου -->
+                <div class="settings-section">
+                  <h2 class="settings-title">Επιλογές Περιεχομένου</h2>
+                  <p class="settings-description">Επιλέξτε τους τύπους περιεχομένου και τα πεδία που θέλετε να δημιουργηθούν.</p>
+                  
+                  <!-- Image Section -->
+                  <div class="content-type-section">
+                    <div class="content-type-header">
+                      <input type="checkbox" id="content-image" class="content-type-checkbox">
+                      <label for="content-image" class="content-type-label">Image</label>
+                    </div>
+                    <div class="content-type-options">
+                      <div class="option-item">
+                        <input type="checkbox" id="image-alt-text" class="option-checkbox">
+                        <label for="image-alt-text" class="option-label">Alternative Text</label>
+                      </div>
+                      <div class="option-item">
+                        <input type="checkbox" id="image-title" class="option-checkbox">
+                        <label for="image-title" class="option-label">Title</label>
+                      </div>
+                      <div class="option-item">
+                        <input type="checkbox" id="image-caption" class="option-checkbox">
+                        <label for="image-caption" class="option-label">Caption</label>
+                      </div>
+                      <div class="option-item">
+                        <input type="checkbox" id="image-description" class="option-checkbox">
+                        <label for="image-description" class="option-label">Description</label>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Post Section -->
+                  <div class="content-type-section">
+                    <div class="content-type-header">
+                      <input type="checkbox" id="content-post" class="content-type-checkbox">
+                      <label for="content-post" class="content-type-label">Post</label>
+                    </div>
+                    <div class="content-type-options">
+                      <div class="option-item">
+                        <input type="checkbox" id="post-seo-keyword" class="option-checkbox">
+                        <label for="post-seo-keyword" class="option-label">SEO Keyword</label>
+                      </div>
+                      <div class="option-item">
+                        <input type="checkbox" id="post-seo-title" class="option-checkbox">
+                        <label for="post-seo-title" class="option-label">SEO Title</label>
+                      </div>
+                      <div class="option-item">
+                        <input type="checkbox" id="post-seo-meta-description" class="option-checkbox">
+                        <label for="post-seo-meta-description" class="option-label">SEO Meta Description</label>
+                      </div>
+                      <div class="option-item">
+                        <input type="checkbox" id="post-image-alt-description" class="option-checkbox">
+                        <label for="post-image-alt-description" class="option-label">Image Alt Description</label>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Products Section -->
+                  <div class="content-type-section">
+                    <div class="content-type-header">
+                      <input type="checkbox" id="content-products" class="content-type-checkbox">
+                      <label for="content-products" class="content-type-label">Products</label>
+                    </div>
+                    <div class="content-type-options">
+                      <div class="option-item">
+                        <input type="checkbox" id="products-description" class="option-checkbox">
+                        <label for="products-description" class="option-label">Description</label>
+                      </div>
+                      <div class="option-item">
+                        <input type="checkbox" id="products-short-description" class="option-checkbox">
+                        <label for="products-short-description" class="option-label">Short Description</label>
+                      </div>
+                      <div class="option-item">
+                        <input type="checkbox" id="products-seo-keyword" class="option-checkbox">
+                        <label for="products-seo-keyword" class="option-label">SEO Keyword</label>
+                      </div>
+                      <div class="option-item">
+                        <input type="checkbox" id="products-seo-title" class="option-checkbox">
+                        <label for="products-seo-title" class="option-label">SEO Title</label>
+                      </div>
+                      <div class="option-item">
+                        <input type="checkbox" id="products-seo-meta-description" class="option-checkbox">
+                        <label for="products-seo-meta-description" class="option-label">SEO Meta Description</label>
+                      </div>
+                      <div class="option-item">
+                        <input type="checkbox" id="products-image-alt-description" class="option-checkbox">
+                        <label for="products-image-alt-description" class="option-label">Image Alt Description</label>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Product Category Section -->
+                  <div class="content-type-section">
+                    <div class="content-type-header">
+                      <input type="checkbox" id="content-product-category" class="content-type-checkbox">
+                      <label for="content-product-category" class="content-type-label">Product Category</label>
+                    </div>
+                    <div class="content-type-options">
+                      <div class="option-item">
+                        <input type="checkbox" id="product-category-description" class="option-checkbox">
+                        <label for="product-category-description" class="option-label">Description</label>
+                      </div>
+                      <div class="option-item">
+                        <input type="checkbox" id="product-category-short-description" class="option-checkbox">
+                        <label for="product-category-short-description" class="option-label">Short Description</label>
+                      </div>
+                      <div class="option-item">
+                        <input type="checkbox" id="product-category-seo-keyword" class="option-checkbox">
+                        <label for="product-category-seo-keyword" class="option-label">SEO Keyword</label>
+                      </div>
+                      <div class="option-item">
+                        <input type="checkbox" id="product-category-seo-title" class="option-checkbox">
+                        <label for="product-category-seo-title" class="option-label">SEO Title</label>
+                      </div>
+                      <div class="option-item">
+                        <input type="checkbox" id="product-category-seo-meta-description" class="option-checkbox">
+                        <label for="product-category-seo-meta-description" class="option-label">SEO Meta Description</label>
+                      </div>
+                      <div class="option-item">
+                        <input type="checkbox" id="product-category-image-alt-description" class="option-checkbox">
+                        <label for="product-category-image-alt-description" class="option-label">Image Alt Description</label>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Pages Section -->
+                  <div class="content-type-section">
+                    <div class="content-type-header">
+                      <input type="checkbox" id="content-pages" class="content-type-checkbox">
+                      <label for="content-pages" class="content-type-label">Pages</label>
+                    </div>
+                    <div class="content-type-options">
+                      <div class="option-item">
+                        <input type="checkbox" id="pages-seo-title" class="option-checkbox">
+                        <label for="pages-seo-title" class="option-label">SEO Title</label>
+                      </div>
+                      <div class="option-item">
+                        <input type="checkbox" id="pages-seo-meta-description" class="option-checkbox">
+                        <label for="pages-seo-meta-description" class="option-label">SEO Meta Description</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Ρυθμίσεις Μοντέλου AI -->
+                <div class="settings-section">
+                  <h2 class="settings-title">Ρυθμίσεις Μοντέλου AI</h2>
+                  <p class="settings-description">Διαμορφώστε το μοντέλο AI και τις παραμέτρους λειτουργίας του.</p>
+                  
+                  <div class="settings-form-group">
+                    <label for="model-selection">Μοντέλο AI <span class="info-icon" title="Το μοντέλο AI που θα χρησιμοποιηθεί">(?)</span></label>
+                    <select id="model-selection">
+                      <option value="gpt-4o">GPT-4o</option>
+                      <option value="gpt-4">GPT-4</option>
+                      <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                      <option value="gpt-3.5-turbo" selected>GPT-3.5 Turbo</option>
+                      <option value="claude-3-opus">Claude 3 Opus</option>
+                      <option value="claude-3-sonnet">Claude 3 Sonnet</option>
+                      <option value="claude-3-haiku">Claude 3 Haiku</option>
+                      <option value="gemini-pro">Gemini Pro</option>
+                      <option value="llama-3">Llama 3</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <!-- Ρυθμίσεις Κειμένου -->
+                <div class="settings-section">
+                  <h2 class="settings-title">Ρυθμίσεις Κειμένου</h2>
+                  <p class="settings-description">Προσαρμόστε το στυλ και τις μέγιστες τιμές για παραγόμενο κείμενο.</p>
+                  
+                  <div class="settings-form-group">
+                    <label for="text-style">Ύφος Κειμένου <span class="info-icon" title="Το ύφος του παραγόμενου κειμένου">(?)</span></label>
+                    <select id="text-style">
+                      <option value="formal">Επίσημο</option>
+                      <option value="casual">Καθημερινό</option>
+                      <option value="professional" selected>Επαγγελματικό</option>
+                      <option value="friendly">Φιλικό</option>
+                    </select>
+                  </div>
+                  
+                  <div class="settings-form-group">
+                    <label for="max-chars-products">Μέγιστο Κειμένου για Προϊόντα <span class="info-icon" title="Μέγιστος αριθμός χαρακτήρων">(?)</span></label>
+                    <select id="max-chars-products">
+                      <option value="100">100 χαρ.</option>
+                      <option value="150">150 χαρ.</option>
+                      <option value="200">200 χαρ.</option>
+                      <option value="250" selected>250 χαρ.</option>
+                      <option value="300">300 χαρ.</option>
+                    </select>
+                  </div>
+                  
+                  <div class="settings-form-group">
+                    <label for="max-chars-descriptions">Μέγιστο Κειμένου για Περιγραφές Προϊόντων <span class="info-icon" title="Μέγιστος αριθμός χαρακτήρων">(?)</span></label>
+                    <select id="max-chars-descriptions">
+                      <option value="150">150 χαρ.</option>
+                      <option value="200">200 χαρ.</option>
+                      <option value="250" selected>250 χαρ.</option>
+                      <option value="300">300 χαρ.</option>
+                      <option value="350">350 χαρ.</option>
+                    </select>
+                  </div>
+                  
+                  <div class="settings-form-group">
+                    <label for="max-chars-blog">Μέγιστο Κειμένου για Blog Posts <span class="info-icon" title="Μέγιστος αριθμός χαρακτήρων">(?)</span></label>
+                    <select id="max-chars-blog">
+                      <option value="200">200 χαρ.</option>
+                      <option value="250" selected>250 χαρ.</option>
+                      <option value="300">300 χαρ.</option>
+                      <option value="350">350 χαρ.</option>
+                      <option value="400">400 χαρ.</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="settings-actions">
+                  <button class="settings-save-button">
+                    <i class="fa-solid fa-save"></i> Αποθήκευση αλλαγών
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Add Product Modal -->
+  <div class="modal" id="add-product-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Add New Product</h2>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="product-name">Product Name</label>
+          <input type="text" id="product-name" placeholder="Enter product name">
+        </div>
+        <div class="form-group">
+          <label for="product-category">Category</label>
+          <select id="product-category">
+            <option value="">Select a category</option>
+            <option value="electronics">Electronics</option>
+            <option value="clothing">Clothing</option>
+            <option value="home">Home & Garden</option>
+            <option value="beauty">Beauty & Personal Care</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="product-features">Key Features</label>
+          <textarea id="product-features" placeholder="Enter key product features, one per line"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-cancel">Cancel</button>
+        <button class="modal-save">Save Product</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Product Modal -->
+  <div class="modal" id="edit-product-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Edit Product</h2>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="edit-product-name">Product Name</label>
+          <input type="text" id="edit-product-name" placeholder="Enter product name">
+        </div>
+        <div class="form-group">
+          <label for="edit-product-category">Category</label>
+          <select id="edit-product-category">
+            <option value="">Select a category</option>
+            <option value="electronics">Electronics</option>
+            <option value="clothing">Clothing</option>
+            <option value="home">Home & Garden</option>
+            <option value="beauty">Beauty & Personal Care</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="edit-product-features">Key Features</label>
+          <textarea id="edit-product-features" placeholder="Enter key product features, one per line"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-cancel">Cancel</button>
+        <button class="modal-save">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Description Modal -->
+  <div class="modal" id="view-description-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Product Description</h2>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="description-content"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-cancel">Close</button>
+        <button class="modal-edit">Edit Description</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Generation Progress Modal -->
+  <div class="modal" id="generation-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Generating Descriptions...</h2>
+      </div>
+      <div class="modal-body">
+        <div class="generation-progress">
+          <div class="progress-bar-container">
+            <div class="progress-bar" id="generation-progress-bar"></div>
+          </div>
+          <div class="progress-text" id="generation-progress-text">0%</div>
+        </div>
+        <div class="generation-status" id="generation-status">
+          Preparing to generate descriptions...
+        </div>
+        <div class="email-notification">
+          <p><i class="fa-solid fa-envelope"></i> Θα λάβετε ένα email όταν ολοκληρωθεί η διαδικασία παραγωγής περιγραφών.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-continue" id="generation-continue-btn">Continue Working</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="./js/data.js"></script>
+  <script src="./js/main.js"></script>
+</body>
+</html> 
