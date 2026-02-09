@@ -348,16 +348,6 @@
     color: #1d2327;
 }
 
-.agent-model {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    color: #646970;
-    margin-bottom: 12px;
-    padding: 0 16px;
-}
-
 .agent-description {
     font-size: 13px;
     color: #50575e;

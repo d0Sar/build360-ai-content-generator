@@ -335,7 +335,6 @@ class Build360_AI_API {
     }
         $agent_settings = $all_agents_settings[$agent_id];
 
-        $api_model = isset($agent_settings['ai_model']) ? $agent_settings['ai_model'] : get_option('build360_ai_model', 'gpt-4'); // Fallback to global
         $api_text_style = isset($agent_settings['text_style']) ? $agent_settings['text_style'] : get_option('build360_ai_text_style', 'professional'); // Fallback to global
         $system_prompt_template = isset($agent_settings['system_prompt']) ? $agent_settings['system_prompt'] : "Generate content for {{title}}. Context: {{description}}"; // Default prompt
         // $content_settings_for_agent = isset($agent_settings['content_settings']) ? $agent_settings['content_settings'] : array(); // Field-specific settings like max length
@@ -370,7 +369,6 @@ class Build360_AI_API {
             'prompt'              => $final_prompt,
             'type'                => $api_type,
             'agent_id'            => $agent_id,
-            'model'               => $api_model,
             'text_style'          => $api_text_style,
             // 'fields_to_generate' => $fields_requested, // If API supports specifying which fields to generate output for
             // Add max length if applicable and if the agent or API supports it per field or globally
@@ -395,10 +393,9 @@ class Build360_AI_API {
     public function bulk_generate_content($content_type, $items) {
         $endpoint = 'bulk-generate/' . $content_type;
 
-        // Add AI model and style settings
+        // Add style settings
         $data = array(
             'items' => $items,
-            'model' => get_option('build360_ai_model', 'gpt-4'),
             'text_style' => get_option('build360_ai_text_style', 'professional'),
         );
 

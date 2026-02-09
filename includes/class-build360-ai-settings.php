@@ -32,7 +32,6 @@ class Build360_AI_Settings {
         register_setting('build360_ai_api_settings', 'build360_ai_domain');
         
         // AI Model Settings
-        register_setting('build360_ai_model_settings', 'build360_ai_model');
         register_setting('build360_ai_model_settings', 'build360_ai_text_style');
         register_setting('build360_ai_model_settings', 'build360_ai_max_product_text');
         register_setting('build360_ai_model_settings', 'build360_ai_max_product_desc_text');
@@ -47,25 +46,6 @@ class Build360_AI_Settings {
         register_setting('build360_ai_token_settings', 'build360_ai_token_usage_today');
         register_setting('build360_ai_token_settings', 'build360_ai_token_usage_month');
         register_setting('build360_ai_token_settings', 'build360_ai_token_usage_last_reset');
-    }
-
-    /**
-     * Get available AI models
-     *
-     * @return array
-     */
-    public function get_ai_models() {
-        return array(
-            'gpt-4o' => __('GPT-4o (Latest)', 'build360-ai'),
-            'gpt-4' => __('GPT-4', 'build360-ai'),
-            'gpt-4-turbo' => __('GPT-4 Turbo', 'build360-ai'),
-            'gpt-3.5-turbo' => __('GPT-3.5 Turbo', 'build360-ai'),
-            'claude-3-opus' => __('Claude 3 Opus', 'build360-ai'),
-            'claude-3-sonnet' => __('Claude 3 Sonnet', 'build360-ai'),
-            'claude-3-haiku' => __('Claude 3 Haiku', 'build360-ai'),
-            'gemini-pro' => __('Gemini Pro', 'build360-ai'),
-            'llama-3' => __('Llama 3', 'build360-ai'),
-        );
     }
 
     /**
@@ -113,11 +93,6 @@ class Build360_AI_Settings {
         
         if (isset($data['domain'])) {
             update_option('build360_ai_domain', sanitize_text_field($data['domain']));
-        }
-        
-        // Save AI model settings
-        if (isset($data['model'])) {
-            update_option('build360_ai_model', sanitize_text_field($data['model']));
         }
         
         if (isset($data['text_style'])) {
@@ -170,7 +145,6 @@ class Build360_AI_Settings {
         return array(
             'api_key' => get_option('build360_ai_api_key', ''),
             'domain' => get_option('build360_ai_domain', ''),
-            'model' => get_option('build360_ai_model', 'gpt-4'),
             'text_style' => get_option('build360_ai_text_style', 'professional'),
             'max_product_text' => get_option('build360_ai_max_product_text', '200'),
             'max_product_desc_text' => get_option('build360_ai_max_product_desc_text', '400'),

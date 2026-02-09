@@ -126,7 +126,6 @@ jQuery(document).ready(function ($) {
                                             <button type="button" class="button-icon delete-agent" title="Delete Agent"><span class="dashicons dashicons-trash"></span></button>
                                         </div>
                                     </div>
-                                    <div class="agent-model">${agent.ai_model || 'N/A'}</div>
                                     <p class="agent-description">${agent.description || 'No description.'}</p>
                                     <div class="agent-footer">
                                         <span class="agent-status ${agent.is_active ? 'active' : 'inactive'}">
@@ -198,7 +197,6 @@ jQuery(document).ready(function ($) {
                     const agent = response.data.data; // Get the actual agent object
 
                     $modal.find('#agent-name').val(agent.name);
-                    $modal.find('#agent-model').val(agent.ai_model);
                     $modal.find('#agent-text-style').val(agent.text_style || '');
                     $modal.find('#agent-description').val(agent.description);
                     $modal.find('#agent-prompt').val(agent.system_prompt);
@@ -245,7 +243,6 @@ jQuery(document).ready(function ($) {
         const agentId = $form.data('agent-id') || '';
         const agent_data = {
             name: $modal.find('#agent-name').val(),
-            ai_model: $modal.find('#agent-model').val(),
             text_style: $modal.find('#agent-text-style').val(),
             description: $modal.find('#agent-description').val(),
             system_prompt: $modal.find('#agent-prompt').val(),
@@ -327,7 +324,6 @@ jQuery(document).ready(function ($) {
 
         const requiredFields = {
             '#agent-name': (build360_ai_vars.i18n && build360_ai_vars.i18n.name_required) || 'Name is required',
-            '#agent-model': (build360_ai_vars.i18n && build360_ai_vars.i18n.model_required) || 'AI Model is required',
             '#agent-prompt': (build360_ai_vars.i18n && build360_ai_vars.i18n.prompt_required) || 'System Prompt is required'
         };
 
@@ -376,9 +372,8 @@ jQuery(document).ready(function ($) {
             const $agentCard = $(this);
             const name = $agentCard.find('.agent-name').text().toLowerCase();
             const description = $agentCard.find('.agent-description').text().toLowerCase();
-            const model = $agentCard.find('.agent-model').text().toLowerCase();
 
-            if (name.includes(searchTerm) || description.includes(searchTerm) || model.includes(searchTerm)) {
+            if (name.includes(searchTerm) || description.includes(searchTerm)) {
                 $agentCard.show();
             } else {
                 $agentCard.hide();

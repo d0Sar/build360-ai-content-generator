@@ -12,7 +12,6 @@ if (!defined('ABSPATH')) {
 
 // Get settings instance
 $settings_instance = new Build360_AI_Settings();
-$models = $settings_instance->get_ai_models();
 $token_usage = $settings_instance->get_token_usage();
 
 // Get agents
@@ -61,17 +60,6 @@ $categories = array(
                             </button>
                         </div>
                     </div>
-                    <div class="agent-model">
-                        <?php 
-                        if (isset($agent['model']) && isset($models[$agent['model']])) {
-                            echo esc_html($models[$agent['model']]);
-                        } elseif (isset($agent['model'])) {
-                            echo esc_html($agent['model']); // Fallback to raw model key if label not found
-                        } else {
-                            echo esc_html__('Model N/A', 'build360-ai'); // Or some other placeholder
-                        }
-                        ?>
-                    </div>
                     <div class="agent-description"><?php echo esc_html($agent['description']); ?></div>
                     <div class="agent-stats">
                         <span class="stat">
@@ -108,19 +96,6 @@ $categories = array(
                         <span class="build360-tooltip" data-tooltip="<?php esc_attr_e('A descriptive name for this agent, e.g. \'Product Descriptions\' or \'Blog SEO\'.', 'build360-ai'); ?>"><span class="dashicons dashicons-editor-help"></span></span>
                     </label>
                     <input type="text" id="agent-name" name="name" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="agent-model">
-                        <?php _e('AI Model', 'build360-ai'); ?>
-                        <span class="required">*</span>
-                        <span class="build360-tooltip" data-tooltip="<?php esc_attr_e('The AI model to use. GPT-4o is recommended for best quality.', 'build360-ai'); ?>"><span class="dashicons dashicons-editor-help"></span></span>
-                    </label>
-                    <select id="agent-model" name="model" required>
-                        <?php foreach ($models as $key => $label) : ?>
-                            <option value="<?php echo esc_attr($key); ?>"><?php echo esc_html($label); ?></option>
-                        <?php endforeach; ?>
-                    </select>
                 </div>
 
                 <div class="form-group">
@@ -213,6 +188,10 @@ $categories = array(
     height: 100%;
     background: #2271b1;
     transition: width 0.3s ease;
+}
+
+#agent-prompt {
+    min-height: 220px;
 }
 
 .form-error {

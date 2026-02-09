@@ -55,7 +55,7 @@ if (!defined('ABSPATH')) {
             <span class="dashicons dashicons-arrow-down-alt2 build360-guide-toggle"></span>
         </div>
         <div class="build360-guide-section-body">
-            <p><?php _e('AI Agents are configurations that define <em>how</em> the AI generates content. Each agent has its own model, style, and system prompt.', 'build360-ai'); ?></p>
+            <p><?php _e('AI Agents are configurations that define <em>how</em> the AI generates content. Each agent has its own style and system prompt.', 'build360-ai'); ?></p>
 
             <h4><?php _e('Creating an Agent', 'build360-ai'); ?></h4>
             <ol>
@@ -64,7 +64,6 @@ if (!defined('ABSPATH')) {
                 <li><?php _e('Fill in the required fields:', 'build360-ai'); ?>
                     <ul>
                         <li><strong><?php _e('Name', 'build360-ai'); ?></strong> &ndash; <?php _e('e.g., "Product Descriptions" or "Blog SEO"', 'build360-ai'); ?></li>
-                        <li><strong><?php _e('AI Model', 'build360-ai'); ?></strong> &ndash; <?php _e('GPT-4o is recommended for best quality. Lighter models are faster and cheaper.', 'build360-ai'); ?></li>
                         <li><strong><?php _e('System Prompt', 'build360-ai'); ?></strong> &ndash; <?php _e('Instructions that tell the AI how to write. Be specific about tone, language, and formatting.', 'build360-ai'); ?></li>
                     </ul>
                 </li>

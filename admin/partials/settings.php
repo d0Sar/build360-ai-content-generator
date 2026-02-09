@@ -15,7 +15,6 @@ $settings_instance = new Build360_AI_Settings();
 
 // Get settings
 $settings = $settings_instance->get_settings();
-$models = $settings_instance->get_ai_models();
 $text_styles = $settings_instance->get_text_styles();
 $max_lengths = $settings_instance->get_max_text_lengths();
 
