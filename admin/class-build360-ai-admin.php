@@ -62,6 +62,15 @@ class Build360_AI_Admin {
 
         add_submenu_page(
             'build360-ai',
+            __('Products', 'build360-ai'),
+            __('Products', 'build360-ai'),
+            'manage_options',
+            'build360-ai-products',
+            array($this, 'render_products_page')
+        );
+
+        add_submenu_page(
+            'build360-ai',
             __('AI Agents', 'build360-ai'),
             __('AI Agents', 'build360-ai'),
             'manage_options',
@@ -394,26 +403,32 @@ class Build360_AI_Admin {
             wp_localize_script('build360-ai-taxonomy', 'build360_ai_vars', $taxonomy_localization_data);
         }
 
-        // Enqueue bulk generation JS on product list page
-        if ($is_product_list_page) {
+        // Enqueue bulk generation JS on product list page AND plugin products page
+        if ($is_product_list_page || $is_plugin_page) {
             $active_job_id = get_user_meta(get_current_user_id(), '_build360_ai_active_bulk_job', true);
 
             wp_enqueue_script(
                 'build360-ai-bulk',
                 BUILD360_AI_PLUGIN_URL . 'js/build360-ai-bulk.js',
                 array('jquery'),
-                BUILD360_AI_VERSION,
+                rand(10000, 99999),
                 true
             );
 
             wp_localize_script('build360-ai-bulk', 'build360_ai_bulk_vars', array(
                 'ajax_url' => admin_url('admin-ajax.php'),
                 'active_job_id' => $active_job_id ? $active_job_id : '',
+                'is_plugin_page' => $is_plugin_page ? '1' : '',
                 'nonces' => array(
                     'bulk_progress' => wp_create_nonce('build360_ai_bulk_progress_nonce'),
                     'bulk_results' => wp_create_nonce('build360_ai_bulk_results_nonce'),
                     'bulk_cancel' => wp_create_nonce('build360_ai_bulk_cancel_nonce'),
                     'bulk_dismiss' => wp_create_nonce('build360_ai_bulk_dismiss_nonce'),
+                    'start_bulk' => wp_create_nonce('build360_ai_start_bulk_nonce'),
+                    'bulk_review' => wp_create_nonce('build360_ai_bulk_review_nonce'),
+                    'bulk_apply' => wp_create_nonce('build360_ai_bulk_apply_nonce'),
+                    'bulk_reject' => wp_create_nonce('build360_ai_bulk_reject_nonce'),
+                    'bulk_apply_all' => wp_create_nonce('build360_ai_bulk_apply_all_nonce'),
                 ),
                 'strings' => array(
                     'processing' => __('Processing...', 'build360-ai'),
@@ -430,12 +445,31 @@ class Build360_AI_Admin {
                     'short_description' => __('Short Description', 'build360-ai'),
                     'seo_title' => __('SEO Title', 'build360-ai'),
                     'seo_description' => __('SEO Description', 'build360-ai'),
+                    'image_alt' => __('Image Alt Text', 'build360-ai'),
                     'products_processed' => __('products processed', 'build360-ai'),
                     'succeeded' => __('succeeded', 'build360-ai'),
                     'of' => __('of', 'build360-ai'),
                     'results_title' => __('Bulk Generation Results', 'build360-ai'),
                     'edit' => __('Edit', 'build360-ai'),
                     'dismiss' => __('Dismiss', 'build360-ai'),
+                    // New strings for field selection + review
+                    'select_fields_title' => __('Select Fields to Generate', 'build360-ai'),
+                    'start_generation' => __('Start Generation', 'build360-ai'),
+                    'products_selected' => __('products selected', 'build360-ai'),
+                    'review_title' => __('Review Generated Content', 'build360-ai'),
+                    'accept' => __('Accept', 'build360-ai'),
+                    'skip' => __('Skip', 'build360-ai'),
+                    'accept_all' => __('Accept All Remaining', 'build360-ai'),
+                    'reviewed_count' => __('products reviewed', 'build360-ai'),
+                    'batch_info' => __('Products are processed in batches of 50 for reliability.', 'build360-ai'),
+                    'applying' => __('Applying...', 'build360-ai'),
+                    'applied' => __('Content applied!', 'build360-ai'),
+                    'skipped' => __('Skipped', 'build360-ai'),
+                    'no_fields_selected' => __('Please select at least one field.', 'build360-ai'),
+                    'no_products_selected' => __('Please select at least one product.', 'build360-ai'),
+                    'accept_all_confirm' => __('Apply generated content to all remaining products?', 'build360-ai'),
+                    'dismiss_pending_warning' => __('product(s) have generated content that has not been reviewed yet. Dismiss anyway? The unreviewed content will be discarded.', 'build360-ai'),
+                    'page_of' => __('Page %1$s of %2$s', 'build360-ai'),
                 ),
             ));
         }

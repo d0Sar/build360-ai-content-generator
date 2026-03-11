@@ -1791,6 +1791,319 @@
 }
 
 /* =====================================================
+   Batch Info Message
+   ===================================================== */
+.build360-bulk-batch-info {
+    font-size: 12px;
+    color: #646970;
+    margin: 0 0 12px 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.build360-bulk-batch-info .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: #2271b1;
+}
+
+/* =====================================================
+   Field Selection Modal
+   ===================================================== */
+.build360-field-select-content {
+    max-width: 480px;
+}
+
+.build360-field-select-count {
+    font-size: 14px;
+    font-weight: 600;
+    color: #2271b1;
+    margin-bottom: 16px;
+}
+
+.build360-field-select-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.build360-field-select-options label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #f6f7f7;
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.build360-field-select-options label:hover {
+    background: #f0f6fc;
+    border-color: #2271b1;
+}
+
+.build360-field-select-options input[type="checkbox"] {
+    margin: 0;
+}
+
+.build360-batch-info {
+    font-size: 12px;
+    color: #646970;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+    padding: 8px 0 0;
+    border-top: 1px solid #f0f0f1;
+}
+
+.build360-batch-info .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: #72aee6;
+}
+
+/* =====================================================
+   Review Modal (full-screen)
+   ===================================================== */
+.build360-review-content {
+    max-width: 900px;
+    width: 95%;
+    max-height: 90vh;
+}
+
+.build360-review-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.build360-review-counter {
+    font-size: 13px;
+    color: #646970;
+    white-space: nowrap;
+}
+
+.build360-review-body {
+    padding: 16px 20px;
+}
+
+/* Review Cards */
+.build360-review-card {
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    transition: opacity 0.3s, border-color 0.3s;
+}
+
+.build360-review-card.build360-review-applied {
+    border-color: #00a32a;
+    opacity: 0.7;
+}
+
+.build360-review-card.build360-review-skipped {
+    border-color: #dcdcde;
+    opacity: 0.5;
+}
+
+.build360-review-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: #f6f7f7;
+    border-bottom: 1px solid #f0f0f1;
+}
+
+.build360-review-card-header strong {
+    flex: 1;
+    font-size: 13px;
+    color: #1d2327;
+}
+
+.build360-review-edit-link {
+    font-size: 12px;
+    text-decoration: none;
+    color: #2271b1;
+}
+
+/* Review Fields (textareas + inputs) */
+.build360-review-fields {
+    padding: 12px 16px;
+}
+
+.build360-review-field {
+    margin-bottom: 12px;
+}
+
+.build360-review-field:last-child {
+    margin-bottom: 0;
+}
+
+.build360-review-field-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #1d2327;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.build360-review-textarea {
+    width: 100%;
+    min-height: 60px;
+    padding: 8px 10px;
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+    font-size: 13px;
+    line-height: 1.5;
+    font-family: inherit;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.build360-review-textarea:focus {
+    border-color: #2271b1;
+    box-shadow: 0 0 0 1px #2271b1;
+    outline: none;
+}
+
+.build360-review-input {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+    font-size: 13px;
+    box-sizing: border-box;
+}
+
+.build360-review-input:focus {
+    border-color: #2271b1;
+    box-shadow: 0 0 0 1px #2271b1;
+    outline: none;
+}
+
+/* Review Card Actions */
+.build360-review-card-actions {
+    display: flex;
+    gap: 8px;
+    padding: 10px 16px;
+    background: #f9f9f9;
+    border-top: 1px solid #f0f0f1;
+}
+
+.build360-review-accept-btn .dashicons,
+.build360-review-skip-btn .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    vertical-align: text-bottom;
+}
+
+/* Review Status Badges */
+.build360-review-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.build360-review-status-applied {
+    background: #edfaef;
+    color: #00a32a;
+}
+
+.build360-review-status-skipped {
+    background: #f0f0f1;
+    color: #646970;
+}
+
+.build360-review-status-badge .dashicons {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+}
+
+/* Review Pagination */
+.build360-review-pagination {
+    display: inline-block;
+    float: left;
+}
+
+.build360-review-pages {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.build360-review-page-btn {
+    min-width: 32px;
+    text-align: center;
+}
+
+.build360-review-page-current {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 30px;
+    background: #2271b1;
+    color: #fff;
+    border-radius: 3px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.build360-review-page-dots {
+    padding: 0 4px;
+    color: #646970;
+}
+
+/* Review Loading/Error/Empty states */
+.build360-review-loading {
+    text-align: center;
+    padding: 40px 20px;
+    color: #646970;
+}
+
+.build360-review-loading .spinner {
+    float: none;
+    margin: 0 8px 0 0;
+}
+
+.build360-review-error {
+    color: #d63638;
+    text-align: center;
+    padding: 20px;
+}
+
+.build360-review-empty {
+    color: #646970;
+    text-align: center;
+    padding: 40px 20px;
+    font-style: italic;
+}
+
+/* Review modal footer */
+#build360-ai-bulk-review-modal .build360-bulk-modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* =====================================================
    Guide Page Styles
    ===================================================== */
 .build360-guide-wrap {

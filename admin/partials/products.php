@@ -168,4 +168,70 @@ $products = new WP_Query($args);
             </div>
         </form>
     </div>
-</div> 
+
+    <!-- Field Selection Modal for Bulk Generation -->
+    <div id="build360-ai-field-select-modal" class="build360-bulk-modal" style="display:none;">
+        <div class="build360-bulk-modal-overlay"></div>
+        <div class="build360-bulk-modal-content build360-field-select-content">
+            <div class="build360-bulk-modal-header">
+                <h2><?php _e('Select Fields to Generate', 'build360-ai'); ?></h2>
+                <button type="button" class="build360-bulk-modal-close"><span class="dashicons dashicons-no-alt"></span></button>
+            </div>
+            <div class="build360-bulk-modal-body">
+                <p class="build360-field-select-count"></p>
+                <div class="build360-field-select-options">
+                    <label>
+                        <input type="checkbox" name="bulk_fields[]" value="description" checked>
+                        <?php _e('Product Description', 'build360-ai'); ?>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="bulk_fields[]" value="short_description" checked>
+                        <?php _e('Short Description', 'build360-ai'); ?>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="bulk_fields[]" value="seo_title">
+                        <?php _e('SEO Title', 'build360-ai'); ?>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="bulk_fields[]" value="seo_description">
+                        <?php _e('SEO Description', 'build360-ai'); ?>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="bulk_fields[]" value="image_alt">
+                        <?php _e('Image Alt Text', 'build360-ai'); ?>
+                    </label>
+                </div>
+                <p class="build360-batch-info">
+                    <span class="dashicons dashicons-info"></span>
+                    <?php _e('Products are processed in batches of 50 for reliability.', 'build360-ai'); ?>
+                </p>
+            </div>
+            <div class="build360-bulk-modal-footer">
+                <button type="button" class="button build360-field-select-cancel"><?php _e('Cancel', 'build360-ai'); ?></button>
+                <button type="button" class="button button-primary build360-field-select-start"><?php _e('Start Generation', 'build360-ai'); ?></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review Modal for Bulk Generation Results -->
+    <div id="build360-ai-bulk-review-modal" class="build360-bulk-modal" style="display:none;">
+        <div class="build360-bulk-modal-overlay"></div>
+        <div class="build360-bulk-modal-content build360-review-content">
+            <div class="build360-bulk-modal-header">
+                <h2><?php _e('Review Generated Content', 'build360-ai'); ?></h2>
+                <div class="build360-review-header-actions">
+                    <span class="build360-review-counter"></span>
+                    <button type="button" class="button button-primary build360-review-accept-all"><?php _e('Accept All Remaining', 'build360-ai'); ?></button>
+                </div>
+                <button type="button" class="build360-bulk-modal-close"><span class="dashicons dashicons-no-alt"></span></button>
+            </div>
+            <div class="build360-bulk-modal-body build360-review-body">
+                <div class="build360-review-products"></div>
+            </div>
+            <div class="build360-bulk-modal-footer">
+                <div class="build360-review-pagination"></div>
+                <button type="button" class="button build360-review-close"><?php _e('Close', 'build360-ai'); ?></button>
+            </div>
+        </div>
+    </div>
+</div>

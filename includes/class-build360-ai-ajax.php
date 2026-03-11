@@ -91,6 +91,12 @@ class Build360_AI_Ajax {
         add_action('wp_ajax_build360_ai_bulk_results', array($this, 'bulk_results_handler'));
         add_action('wp_ajax_build360_ai_bulk_cancel', array($this, 'bulk_cancel_handler'));
         add_action('wp_ajax_build360_ai_bulk_dismiss', array($this, 'bulk_dismiss_handler'));
+        // New bulk generation with field selection + review/approve
+        add_action('wp_ajax_build360_ai_start_bulk', array($this, 'start_bulk_handler'));
+        add_action('wp_ajax_build360_ai_bulk_review', array($this, 'bulk_review_handler'));
+        add_action('wp_ajax_build360_ai_bulk_apply', array($this, 'bulk_apply_handler'));
+        add_action('wp_ajax_build360_ai_bulk_reject', array($this, 'bulk_reject_handler'));
+        add_action('wp_ajax_build360_ai_bulk_apply_all', array($this, 'bulk_apply_all_handler'));
     }
 
     /**
@@ -829,8 +835,13 @@ class Build360_AI_Ajax {
         $products_summary = array();
         foreach ($job_data['products'] as $pid => $pdata) {
             $field_statuses = array();
-            foreach ($pdata['fields'] as $fname => $fdata) {
-                $field_statuses[$fname] = $fdata['status'];
+            // Support both old format (fields[name][status]) and new format (field_statuses[name])
+            if (isset($pdata['field_statuses']) && is_array($pdata['field_statuses'])) {
+                $field_statuses = $pdata['field_statuses'];
+            } elseif (isset($pdata['fields']) && is_array($pdata['fields'])) {
+                foreach ($pdata['fields'] as $fname => $fdata) {
+                    $field_statuses[$fname] = is_array($fdata) ? $fdata['status'] : $fdata;
+                }
             }
             $products_summary[$pid] = array(
                 'name' => $pdata['name'],
@@ -877,13 +888,33 @@ class Build360_AI_Ajax {
             return;
         }
 
-        // Include full product details with previews
+        // Include full product details with previews from post meta
         $products_detail = array();
+        $fields = isset($job_data['fields']) ? $job_data['fields'] : array();
         foreach ($job_data['products'] as $pid => $pdata) {
+            $field_data = array();
+            // Support both old format and new format
+            if (isset($pdata['field_statuses']) && is_array($pdata['field_statuses'])) {
+                foreach ($pdata['field_statuses'] as $fname => $fstatus) {
+                    $preview = '';
+                    if ($fstatus === 'completed') {
+                        $full_content = get_post_meta($pid, '_build360_ai_preview_' . $fname, true);
+                        if ($full_content) {
+                            $preview = mb_substr(wp_strip_all_tags($full_content), 0, 100);
+                        }
+                    }
+                    $field_data[$fname] = array(
+                        'status' => $fstatus,
+                        'preview' => $preview,
+                    );
+                }
+            } elseif (isset($pdata['fields']) && is_array($pdata['fields'])) {
+                $field_data = $pdata['fields'];
+            }
             $products_detail[$pid] = array(
                 'name' => $pdata['name'],
                 'status' => $pdata['status'],
-                'fields' => $pdata['fields'],
+                'fields' => $field_data,
                 'edit_url' => get_edit_post_link($pid, 'raw'),
             );
         }
@@ -944,7 +975,12 @@ class Build360_AI_Ajax {
     }
 
     /**
-     * Dismiss the bulk progress bar (clear user meta)
+     * Dismiss the bulk progress bar.
+     *
+     * If force=0 (default): checks for pending reviews first.
+     *   - If pending reviews exist, returns has_pending_reviews=true so JS can show a warning.
+     *   - If no pending reviews, dismisses immediately.
+     * If force=1: dismisses regardless, cleans up previews + job data.
      */
     public function bulk_dismiss_handler() {
         check_ajax_referer('build360_ai_bulk_dismiss_nonce', 'nonce');
@@ -954,8 +990,447 @@ class Build360_AI_Ajax {
             return;
         }
 
+        $force = isset($_POST['force']) && $_POST['force'] === '1';
+        $job_id = isset($_POST['job_id']) ? sanitize_text_field($_POST['job_id']) : '';
+        if (empty($job_id)) {
+            $job_id = get_user_meta(get_current_user_id(), '_build360_ai_active_bulk_job', true);
+        }
+
+        // Check for pending reviews (unless force dismiss)
+        if (!$force && !empty($job_id)) {
+            $job_data = get_option('build360_ai_bulk_job_' . $job_id);
+            if ($job_data && is_array($job_data) && isset($job_data['products'])) {
+                $preview_fields = array('description', 'short_description', 'seo_title', 'seo_description', 'image_alt');
+                $pending_review_count = 0;
+
+                foreach ($job_data['products'] as $pid => $pdata) {
+                    if ($pdata['status'] !== 'completed') {
+                        continue;
+                    }
+                    foreach ($preview_fields as $field) {
+                        $preview = get_post_meta($pid, '_build360_ai_preview_' . $field, true);
+                        if ($preview !== '' && $preview !== false) {
+                            $pending_review_count++;
+                            break; // One field is enough to know this product has pending reviews
+                        }
+                    }
+                }
+
+                if ($pending_review_count > 0) {
+                    wp_send_json_success(array(
+                        'has_pending_reviews' => true,
+                        'pending_count' => $pending_review_count,
+                    ));
+                    return;
+                }
+            }
+        }
+
+        // No pending reviews (or force=1): clean up everything
         delete_user_meta(get_current_user_id(), '_build360_ai_active_bulk_job');
-        wp_send_json_success(array('message' => __('Dismissed.', 'build360-ai')));
+
+        if (!empty($job_id)) {
+            $job_data = get_option('build360_ai_bulk_job_' . $job_id);
+            if ($job_data && is_array($job_data) && isset($job_data['products'])) {
+                $preview_fields = array('description', 'short_description', 'seo_title', 'seo_description', 'image_alt');
+                foreach (array_keys($job_data['products']) as $pid) {
+                    foreach ($preview_fields as $field) {
+                        delete_post_meta($pid, '_build360_ai_preview_' . $field);
+                    }
+                    delete_post_meta($pid, '_build360_ai_preview_job_id');
+                }
+            }
+            delete_option('build360_ai_bulk_job_' . $job_id);
+        }
+
+        wp_send_json_success(array('dismissed' => true));
+    }
+
+    /**
+     * Start a bulk generation job with user-selected fields (custom products page)
+     */
+    public function start_bulk_handler() {
+        check_ajax_referer('build360_ai_start_bulk_nonce', 'nonce');
+
+        if (!current_user_can('edit_products')) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'build360-ai')));
+            return;
+        }
+
+        $product_ids = isset($_POST['product_ids']) && is_array($_POST['product_ids']) ? array_map('intval', $_POST['product_ids']) : array();
+        $fields = isset($_POST['fields']) && is_array($_POST['fields']) ? array_map('sanitize_text_field', $_POST['fields']) : array();
+
+        if (empty($product_ids)) {
+            wp_send_json_error(array('message' => __('No products selected.', 'build360-ai')));
+            return;
+        }
+
+        if (empty($fields)) {
+            wp_send_json_error(array('message' => __('No fields selected.', 'build360-ai')));
+            return;
+        }
+
+        // Validate field names
+        $allowed_fields = array('description', 'short_description', 'seo_title', 'seo_description', 'image_alt');
+        $fields = array_intersect($fields, $allowed_fields);
+        if (empty($fields)) {
+            wp_send_json_error(array('message' => __('No valid fields selected.', 'build360-ai')));
+            return;
+        }
+
+        // Verify agent assignment
+        $agent_assignments = get_option('build360_ai_agent_assignments', array());
+        $product_agent_id = null;
+        foreach ($agent_assignments as $assignment) {
+            if (isset($assignment['type']) && $assignment['type'] === 'product' && isset($assignment['agent_id'])) {
+                $product_agent_id = $assignment['agent_id'];
+                break;
+            }
+        }
+
+        if (empty($product_agent_id)) {
+            wp_send_json_error(array('message' => __('No AI Agent is assigned to the "product" content type. Please check plugin settings.', 'build360-ai')));
+            return;
+        }
+
+        // Build slim job data
+        $job_id = 'bulk_' . wp_generate_uuid4();
+        $products_data = array();
+
+        foreach ($product_ids as $post_id) {
+            $product = wc_get_product($post_id);
+            if (!$product) {
+                continue;
+            }
+            $products_data[$post_id] = array(
+                'name' => $product->get_name(),
+                'status' => 'pending',
+                'field_statuses' => array(),
+            );
+            foreach ($fields as $field) {
+                $products_data[$post_id]['field_statuses'][$field] = 'pending';
+            }
+        }
+
+        if (empty($products_data)) {
+            wp_send_json_error(array('message' => __('No valid products found.', 'build360-ai')));
+            return;
+        }
+
+        $job_data = array(
+            'job_id' => $job_id,
+            'status' => 'processing',
+            'user_id' => get_current_user_id(),
+            'total' => count($products_data),
+            'completed' => 0,
+            'succeeded' => 0,
+            'failed' => 0,
+            'fields' => array_values($fields),
+            'agent_id' => $product_agent_id,
+            'products' => $products_data,
+            'created_at' => current_time('mysql'),
+        );
+
+        update_option('build360_ai_bulk_job_' . $job_id, $job_data, false);
+        update_user_meta(get_current_user_id(), '_build360_ai_active_bulk_job', $job_id);
+
+        // Schedule first batch (up to 50)
+        $this->product_integration->schedule_next_batch($job_id);
+
+        // Schedule cleanup after 1 hour
+        if (function_exists('as_schedule_single_action')) {
+            as_schedule_single_action(
+                time() + 3600,
+                'build360_ai_cleanup_bulk_job',
+                array($job_id),
+                'build360-ai'
+            );
+        }
+
+        wp_send_json_success(array(
+            'message' => sprintf(__('Bulk generation started for %d products.', 'build360-ai'), count($products_data)),
+            'job_id' => $job_id,
+        ));
+    }
+
+    /**
+     * Get paginated review data for a completed bulk job
+     */
+    public function bulk_review_handler() {
+        check_ajax_referer('build360_ai_bulk_review_nonce', 'nonce');
+
+        if (!current_user_can('edit_products')) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'build360-ai')));
+            return;
+        }
+
+        $job_id = isset($_POST['job_id']) ? sanitize_text_field($_POST['job_id']) : '';
+        $page = isset($_POST['page']) ? max(1, intval($_POST['page'])) : 1;
+        $per_page = isset($_POST['per_page']) ? max(1, min(50, intval($_POST['per_page']))) : 20;
+
+        if (empty($job_id)) {
+            $job_id = get_user_meta(get_current_user_id(), '_build360_ai_active_bulk_job', true);
+        }
+
+        if (empty($job_id)) {
+            wp_send_json_error(array('message' => __('No active bulk job found.', 'build360-ai')));
+            return;
+        }
+
+        $job_data = get_option('build360_ai_bulk_job_' . $job_id);
+        if (!$job_data || !is_array($job_data)) {
+            wp_send_json_error(array('message' => __('Bulk job data not found.', 'build360-ai')));
+            return;
+        }
+
+        $fields = isset($job_data['fields']) ? $job_data['fields'] : array();
+
+        // Collect products that have preview meta (completed generation)
+        $all_product_ids = array();
+        foreach ($job_data['products'] as $pid => $pdata) {
+            if ($pdata['status'] === 'completed') {
+                $all_product_ids[] = $pid;
+            }
+        }
+
+        $total_products = count($all_product_ids);
+        $total_pages = max(1, ceil($total_products / $per_page));
+        $page = min($page, $total_pages);
+        $offset = ($page - 1) * $per_page;
+        $page_product_ids = array_slice($all_product_ids, $offset, $per_page);
+
+        $products_detail = array();
+        foreach ($page_product_ids as $pid) {
+            $product_info = array(
+                'id' => $pid,
+                'name' => isset($job_data['products'][$pid]['name']) ? $job_data['products'][$pid]['name'] : '',
+                'edit_url' => get_edit_post_link($pid, 'raw'),
+                'previews' => array(),
+                'review_status' => 'pending_review',
+            );
+
+            // Check if content was already applied (preview meta cleaned up)
+            $has_previews = false;
+            foreach ($fields as $field) {
+                $preview_content = get_post_meta($pid, '_build360_ai_preview_' . $field, true);
+                if ($preview_content !== '' && $preview_content !== false) {
+                    $product_info['previews'][$field] = $preview_content;
+                    $has_previews = true;
+                }
+            }
+
+            if (!$has_previews) {
+                $product_info['review_status'] = 'applied';
+            }
+
+            $products_detail[] = $product_info;
+        }
+
+        wp_send_json_success(array(
+            'job_id' => $job_id,
+            'fields' => $fields,
+            'products' => $products_detail,
+            'page' => $page,
+            'per_page' => $per_page,
+            'total_products' => $total_products,
+            'total_pages' => $total_pages,
+        ));
+    }
+
+    /**
+     * Apply generated content from preview meta to a single product
+     */
+    public function bulk_apply_handler() {
+        check_ajax_referer('build360_ai_bulk_apply_nonce', 'nonce');
+
+        if (!current_user_can('edit_products')) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'build360-ai')));
+            return;
+        }
+
+        $product_id = isset($_POST['product_id']) ? intval($_POST['product_id']) : 0;
+        $edits = isset($_POST['edits']) && is_array($_POST['edits']) ? $_POST['edits'] : array();
+
+        if ($product_id <= 0) {
+            wp_send_json_error(array('message' => __('Invalid product ID.', 'build360-ai')));
+            return;
+        }
+
+        $product = wc_get_product($product_id);
+        if (!$product) {
+            wp_send_json_error(array('message' => __('Product not found.', 'build360-ai')));
+            return;
+        }
+
+        $job_id = get_post_meta($product_id, '_build360_ai_preview_job_id', true);
+        $fields_applied = 0;
+        $preview_fields = array('description', 'short_description', 'seo_title', 'seo_description', 'image_alt');
+
+        foreach ($preview_fields as $field) {
+            // Use edited content if provided, otherwise use stored preview
+            if (isset($edits[$field]) && $edits[$field] !== '') {
+                $content = wp_unslash($edits[$field]);
+            } else {
+                $content = get_post_meta($product_id, '_build360_ai_preview_' . $field, true);
+            }
+
+            if ($content === '' || $content === false) {
+                continue;
+            }
+
+            // Apply content using the existing method in product integration
+            $this->product_integration->apply_field_content_public($product, $product_id, $field, $content);
+            $fields_applied++;
+
+            // Clean up preview meta for this field
+            delete_post_meta($product_id, '_build360_ai_preview_' . $field);
+        }
+
+        if ($fields_applied > 0) {
+            $product->save();
+            update_post_meta($product_id, '_build360_ai_last_generated', current_time('mysql'));
+
+            // Track usage stats
+            $current_generated = get_option('build360_ai_content_generated', 0);
+            update_option('build360_ai_content_generated', $current_generated + $fields_applied);
+
+            $current_products = get_option('build360_ai_products_enhanced', 0);
+            update_option('build360_ai_products_enhanced', $current_products + 1);
+        }
+
+        // Clean up job reference meta
+        delete_post_meta($product_id, '_build360_ai_preview_job_id');
+
+        wp_send_json_success(array(
+            'message' => sprintf(__('Content applied to %s (%d fields).', 'build360-ai'), $product->get_name(), $fields_applied),
+            'product_id' => $product_id,
+            'fields_applied' => $fields_applied,
+        ));
+    }
+
+    /**
+     * Reject/skip a product's generated content (delete preview meta)
+     */
+    public function bulk_reject_handler() {
+        check_ajax_referer('build360_ai_bulk_reject_nonce', 'nonce');
+
+        if (!current_user_can('edit_products')) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'build360-ai')));
+            return;
+        }
+
+        $product_id = isset($_POST['product_id']) ? intval($_POST['product_id']) : 0;
+
+        if ($product_id <= 0) {
+            wp_send_json_error(array('message' => __('Invalid product ID.', 'build360-ai')));
+            return;
+        }
+
+        // Delete all preview meta for this product
+        $preview_fields = array('description', 'short_description', 'seo_title', 'seo_description', 'image_alt');
+        foreach ($preview_fields as $field) {
+            delete_post_meta($product_id, '_build360_ai_preview_' . $field);
+        }
+        delete_post_meta($product_id, '_build360_ai_preview_job_id');
+
+        wp_send_json_success(array(
+            'message' => __('Product skipped.', 'build360-ai'),
+            'product_id' => $product_id,
+        ));
+    }
+
+    /**
+     * Apply all remaining products that have preview meta
+     */
+    public function bulk_apply_all_handler() {
+        check_ajax_referer('build360_ai_bulk_apply_all_nonce', 'nonce');
+
+        if (!current_user_can('edit_products')) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'build360-ai')));
+            return;
+        }
+
+        $job_id = isset($_POST['job_id']) ? sanitize_text_field($_POST['job_id']) : '';
+
+        if (empty($job_id)) {
+            $job_id = get_user_meta(get_current_user_id(), '_build360_ai_active_bulk_job', true);
+        }
+
+        if (empty($job_id)) {
+            wp_send_json_error(array('message' => __('No active bulk job found.', 'build360-ai')));
+            return;
+        }
+
+        $job_data = get_option('build360_ai_bulk_job_' . $job_id);
+        if (!$job_data || !is_array($job_data)) {
+            wp_send_json_error(array('message' => __('Bulk job data not found.', 'build360-ai')));
+            return;
+        }
+
+        $fields = isset($job_data['fields']) ? $job_data['fields'] : array();
+        $applied_count = 0;
+        $fields_total = 0;
+
+        foreach ($job_data['products'] as $pid => $pdata) {
+            if ($pdata['status'] !== 'completed') {
+                continue;
+            }
+
+            // Check if this product still has preview meta
+            $has_previews = false;
+            foreach ($fields as $field) {
+                $preview = get_post_meta($pid, '_build360_ai_preview_' . $field, true);
+                if ($preview !== '' && $preview !== false) {
+                    $has_previews = true;
+                    break;
+                }
+            }
+
+            if (!$has_previews) {
+                continue; // Already applied or rejected
+            }
+
+            $product = wc_get_product($pid);
+            if (!$product) {
+                continue;
+            }
+
+            $product_fields_applied = 0;
+            foreach ($fields as $field) {
+                $content = get_post_meta($pid, '_build360_ai_preview_' . $field, true);
+                if ($content === '' || $content === false) {
+                    continue;
+                }
+
+                $this->product_integration->apply_field_content_public($product, $pid, $field, $content);
+                $product_fields_applied++;
+                delete_post_meta($pid, '_build360_ai_preview_' . $field);
+            }
+
+            if ($product_fields_applied > 0) {
+                $product->save();
+                update_post_meta($pid, '_build360_ai_last_generated', current_time('mysql'));
+                $fields_total += $product_fields_applied;
+                $applied_count++;
+            }
+
+            delete_post_meta($pid, '_build360_ai_preview_job_id');
+        }
+
+        // Track usage stats
+        if ($fields_total > 0) {
+            $current_generated = get_option('build360_ai_content_generated', 0);
+            update_option('build360_ai_content_generated', $current_generated + $fields_total);
+        }
+        if ($applied_count > 0) {
+            $current_products = get_option('build360_ai_products_enhanced', 0);
+            update_option('build360_ai_products_enhanced', $current_products + $applied_count);
+        }
+
+        wp_send_json_success(array(
+            'message' => sprintf(__('Content applied to %d products.', 'build360-ai'), $applied_count),
+            'applied_count' => $applied_count,
+        ));
     }
 
     /**

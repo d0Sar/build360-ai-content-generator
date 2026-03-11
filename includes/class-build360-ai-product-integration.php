@@ -52,6 +52,86 @@ public function init() {
     // Register Action Scheduler hooks for background bulk processing
     add_action('build360_ai_process_single_product', array($this, 'process_single_product_background'), 10, 2);
     add_action('build360_ai_cleanup_bulk_job', array($this, 'cleanup_bulk_job'), 10, 1);
+
+    // Output bulk modals on WooCommerce products list page
+    add_action('admin_footer-edit.php', array($this, 'render_bulk_modals_on_product_list'));
+}
+
+/**
+ * Output field selection + review modals on WooCommerce products list page
+ */
+public function render_bulk_modals_on_product_list() {
+    $screen = get_current_screen();
+    if (!$screen || $screen->post_type !== 'product') {
+        return;
+    }
+    ?>
+    <!-- Field Selection Modal for Bulk Generation -->
+    <div id="build360-ai-field-select-modal" class="build360-bulk-modal" style="display:none;">
+        <div class="build360-bulk-modal-overlay"></div>
+        <div class="build360-bulk-modal-content build360-field-select-content">
+            <div class="build360-bulk-modal-header">
+                <h2><?php _e('Select Fields to Generate', 'build360-ai'); ?></h2>
+                <button type="button" class="build360-bulk-modal-close"><span class="dashicons dashicons-no-alt"></span></button>
+            </div>
+            <div class="build360-bulk-modal-body">
+                <p class="build360-field-select-count"></p>
+                <div class="build360-field-select-options">
+                    <label>
+                        <input type="checkbox" name="bulk_fields[]" value="description" checked>
+                        <?php _e('Product Description', 'build360-ai'); ?>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="bulk_fields[]" value="short_description" checked>
+                        <?php _e('Short Description', 'build360-ai'); ?>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="bulk_fields[]" value="seo_title">
+                        <?php _e('SEO Title', 'build360-ai'); ?>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="bulk_fields[]" value="seo_description">
+                        <?php _e('SEO Description', 'build360-ai'); ?>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="bulk_fields[]" value="image_alt">
+                        <?php _e('Image Alt Text', 'build360-ai'); ?>
+                    </label>
+                </div>
+                <p class="build360-batch-info">
+                    <span class="dashicons dashicons-info"></span>
+                    <?php _e('Products are processed in batches of 50 for reliability.', 'build360-ai'); ?>
+                </p>
+            </div>
+            <div class="build360-bulk-modal-footer">
+                <button type="button" class="button build360-field-select-cancel"><?php _e('Cancel', 'build360-ai'); ?></button>
+                <button type="button" class="button button-primary build360-field-select-start"><?php _e('Start Generation', 'build360-ai'); ?></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review Modal for Bulk Generation Results -->
+    <div id="build360-ai-bulk-review-modal" class="build360-bulk-modal" style="display:none;">
+        <div class="build360-bulk-modal-overlay"></div>
+        <div class="build360-bulk-modal-content build360-review-content">
+            <div class="build360-bulk-modal-header">
+                <h2><?php _e('Review Generated Content', 'build360-ai'); ?></h2>
+                <div class="build360-review-header-actions">
+                    <span class="build360-review-counter"></span>
+                    <button type="button" class="button button-primary build360-review-accept-all"><?php _e('Accept All Remaining', 'build360-ai'); ?></button>
+                </div>
+                <button type="button" class="build360-bulk-modal-close"><span class="dashicons dashicons-no-alt"></span></button>
+            </div>
+            <div class="build360-bulk-modal-body build360-review-body">
+                <div class="build360-review-products"></div>
+            </div>
+            <div class="build360-bulk-modal-footer">
+                <div class="build360-review-pagination"></div>
+                <button type="button" class="button build360-review-close"><?php _e('Close', 'build360-ai'); ?></button>
+            </div>
+        </div>
+    </div>
+    <?php
 }
 
 /**
@@ -233,16 +313,14 @@ public function handle_bulk_actions($redirect_to, $doaction, $post_ids) {
         if (!$product) {
             continue;
         }
+        // Slim structure: no content previews stored in job option
         $products_data[$post_id] = array(
             'name' => $product->get_name(),
             'status' => 'pending',
-            'fields' => array(),
+            'field_statuses' => array(),
         );
         foreach ($fields as $field) {
-            $products_data[$post_id]['fields'][$field] = array(
-                'status' => 'pending',
-                'preview' => '',
-            );
+            $products_data[$post_id]['field_statuses'][$field] = 'pending';
         }
     }
 
@@ -272,19 +350,8 @@ public function handle_bulk_actions($redirect_to, $doaction, $post_ids) {
 
     $this->add_bulk_action_activity( sprintf( __( 'Bulk generation job %s started for %d products.', 'build360-ai' ), $job_id, count($products_data) ) );
 
-    // Schedule one Action Scheduler task per product with 2-second stagger
-    $delay = 0;
-    foreach (array_keys($products_data) as $post_id) {
-        if (function_exists('as_schedule_single_action')) {
-            as_schedule_single_action(
-                time() + $delay,
-                'build360_ai_process_single_product',
-                array($job_id, $post_id),
-                'build360-ai'
-            );
-        }
-        $delay += 2; // 2-second stagger between products
-    }
+    // Schedule first batch (up to 50 products)
+    $this->schedule_next_batch($job_id);
 
     // Schedule cleanup after 1 hour
     if (function_exists('as_schedule_single_action')) {
@@ -302,6 +369,9 @@ public function handle_bulk_actions($redirect_to, $doaction, $post_ids) {
 
 /**
  * Action Scheduler callback: process a single product in the background
+ *
+ * Generates content and stores as preview post meta (does NOT auto-apply).
+ * User must review and approve before content is written to the product.
  *
  * @param string $job_id The bulk job identifier
  * @param int $product_id The WooCommerce product ID
@@ -353,55 +423,47 @@ public function process_single_product_background($job_id, $product_id) {
                 $content = $this->extract_content_from_response($result, $field);
 
                 if ($content !== null) {
-                    $this->apply_field_content($product, $product_id, $field, $content);
+                    // Store as preview post meta instead of applying directly
+                    update_post_meta($product_id, '_build360_ai_preview_' . $field, $content);
+                    update_post_meta($product_id, '_build360_ai_preview_job_id', $job_id);
 
+                    // Update job status for this field (slim - no content in job option)
                     $job_data = get_option('build360_ai_bulk_job_' . $job_id);
-                    if (isset($job_data['products'][$product_id]['fields'][$field])) {
-                        $job_data['products'][$product_id]['fields'][$field]['status'] = 'completed';
-                        $job_data['products'][$product_id]['fields'][$field]['preview'] = mb_substr(wp_strip_all_tags($content), 0, 100);
+                    if (isset($job_data['products'][$product_id])) {
+                        $job_data['products'][$product_id]['field_statuses'][$field] = 'completed';
                     }
                     update_option('build360_ai_bulk_job_' . $job_id, $job_data, false);
                     $fields_succeeded++;
                 } else {
                     error_log('[Build360 AI Bulk] No content extracted for product ' . $product_id . ' field ' . $field);
                     $job_data = get_option('build360_ai_bulk_job_' . $job_id);
-                    if (isset($job_data['products'][$product_id]['fields'][$field])) {
-                        $job_data['products'][$product_id]['fields'][$field]['status'] = 'failed';
+                    if (isset($job_data['products'][$product_id])) {
+                        $job_data['products'][$product_id]['field_statuses'][$field] = 'failed';
                     }
                     update_option('build360_ai_bulk_job_' . $job_id, $job_data, false);
                 }
             } else {
                 error_log('[Build360 AI Bulk] WP_Error for product ' . $product_id . ' field ' . $field . ': ' . $result->get_error_message());
                 $job_data = get_option('build360_ai_bulk_job_' . $job_id);
-                if (isset($job_data['products'][$product_id]['fields'][$field])) {
-                    $job_data['products'][$product_id]['fields'][$field]['status'] = 'failed';
+                if (isset($job_data['products'][$product_id])) {
+                    $job_data['products'][$product_id]['field_statuses'][$field] = 'failed';
                 }
                 update_option('build360_ai_bulk_job_' . $job_id, $job_data, false);
             }
         } catch (Exception $e) {
             error_log('[Build360 AI Bulk] Exception for product ' . $product_id . ' field ' . $field . ': ' . $e->getMessage());
             $job_data = get_option('build360_ai_bulk_job_' . $job_id);
-            if (isset($job_data['products'][$product_id]['fields'][$field])) {
-                $job_data['products'][$product_id]['fields'][$field]['status'] = 'failed';
+            if (isset($job_data['products'][$product_id])) {
+                $job_data['products'][$product_id]['field_statuses'][$field] = 'failed';
             }
             update_option('build360_ai_bulk_job_' . $job_id, $job_data, false);
         }
     }
 
-    // Save product after all fields processed
+    // Log activity (content is NOT applied yet - pending review)
     if ($fields_succeeded > 0) {
-        $product->save();
-        update_post_meta($product_id, '_build360_ai_last_generated', current_time('mysql'));
-
-        // Track usage stats
-        $current_generated = get_option('build360_ai_content_generated', 0);
-        update_option('build360_ai_content_generated', $current_generated + $fields_succeeded);
-
-        $current_products = get_option('build360_ai_products_enhanced', 0);
-        update_option('build360_ai_products_enhanced', $current_products + 1);
-
         $this->add_bulk_action_activity(sprintf(
-            __('Bulk AI content generated for product: %s (ID: %d). %d fields updated.', 'build360-ai'),
+            __('Bulk AI content generated for product: %s (ID: %d). %d fields ready for review.', 'build360-ai'),
             $product->get_name(),
             $product_id,
             $fields_succeeded
@@ -460,6 +522,18 @@ private function extract_content_from_response($api_response, $field) {
     }
 
     return null;
+}
+
+/**
+ * Public wrapper for apply_field_content (used by AJAX handlers)
+ *
+ * @param WC_Product $product
+ * @param int $product_id
+ * @param string $field
+ * @param string $content
+ */
+public function apply_field_content_public($product, $product_id, $field, $content) {
+    $this->apply_field_content($product, $product_id, $field, $content);
 }
 
 /**
@@ -528,7 +602,55 @@ private function update_product_job_status($job_id, $product_id, $status) {
 }
 
 /**
- * Check if all products in a job are done and finalize
+ * Schedule the next batch of up to 50 pending products for a job
+ *
+ * @param string $job_id
+ * @return int Number of products scheduled in this batch
+ */
+public function schedule_next_batch($job_id) {
+    $job_data = get_option('build360_ai_bulk_job_' . $job_id);
+    if (!$job_data || !is_array($job_data)) {
+        return 0;
+    }
+
+    if ($job_data['status'] === 'cancelled') {
+        return 0;
+    }
+
+    // Find pending products
+    $pending_ids = array();
+    foreach ($job_data['products'] as $pid => $pdata) {
+        if ($pdata['status'] === 'pending') {
+            $pending_ids[] = $pid;
+        }
+        if (count($pending_ids) >= 50) {
+            break;
+        }
+    }
+
+    if (empty($pending_ids)) {
+        return 0;
+    }
+
+    // Schedule with 2-second stagger
+    $delay = 0;
+    foreach ($pending_ids as $post_id) {
+        if (function_exists('as_schedule_single_action')) {
+            as_schedule_single_action(
+                time() + $delay,
+                'build360_ai_process_single_product',
+                array($job_id, $post_id),
+                'build360-ai'
+            );
+        }
+        $delay += 2;
+    }
+
+    return count($pending_ids);
+}
+
+/**
+ * Check if all products in a job are done and finalize, or schedule next batch
  *
  * @param string $job_id
  */
@@ -538,22 +660,42 @@ private function maybe_finalize_job($job_id) {
         return;
     }
 
+    // Count how many are still pending
+    $pending_count = 0;
+    foreach ($job_data['products'] as $pid => $pdata) {
+        if ($pdata['status'] === 'pending') {
+            $pending_count++;
+        }
+    }
+
     if ($job_data['completed'] >= $job_data['total']) {
+        // All done
         $job_data['status'] = 'completed';
         $job_data['completed_at'] = current_time('mysql');
         update_option('build360_ai_bulk_job_' . $job_id, $job_data, false);
 
-        // Clear active job user meta so progress bar doesn't show permanently
-        if (!empty($job_data['user_id'])) {
-            delete_user_meta($job_data['user_id'], '_build360_ai_active_bulk_job');
-        }
+        // Don't clear active job user meta - user needs it for review
+        // It will be cleared when they dismiss
 
         $this->add_bulk_action_activity(sprintf(
-            __('Bulk generation job completed: %d succeeded, %d failed out of %d products.', 'build360-ai'),
+            __('Bulk generation job completed: %d succeeded, %d failed out of %d products. Content is ready for review.', 'build360-ai'),
             $job_data['succeeded'],
             $job_data['failed'],
             $job_data['total']
         ));
+    } elseif ($pending_count > 0) {
+        // Check if there are currently processing products (they will trigger another finalize call)
+        $processing_count = 0;
+        foreach ($job_data['products'] as $pid => $pdata) {
+            if ($pdata['status'] === 'processing') {
+                $processing_count++;
+            }
+        }
+
+        // If no products are currently processing, schedule next batch
+        if ($processing_count === 0) {
+            $this->schedule_next_batch($job_id);
+        }
     }
 }
 
@@ -563,6 +705,18 @@ private function maybe_finalize_job($job_id) {
  * @param string $job_id
  */
 public function cleanup_bulk_job($job_id) {
+    // Clean up preview post meta for all products in this job
+    $job_data = get_option('build360_ai_bulk_job_' . $job_id);
+    if ($job_data && is_array($job_data) && isset($job_data['products'])) {
+        $preview_fields = array('description', 'short_description', 'seo_title', 'seo_description', 'image_alt');
+        foreach (array_keys($job_data['products']) as $pid) {
+            foreach ($preview_fields as $field) {
+                delete_post_meta($pid, '_build360_ai_preview_' . $field);
+            }
+            delete_post_meta($pid, '_build360_ai_preview_job_id');
+        }
+    }
+
     delete_option('build360_ai_bulk_job_' . $job_id);
 
     // Clear user meta if this was their active job
