@@ -337,6 +337,26 @@
                 $badge.text(s.processing).addClass('status-processing');
             }
 
+            // Show error message if present (e.g. token exhaustion)
+            if (data.error) {
+                var $errorMsg = $wrap.find('.build360-bulk-error-message');
+                if (!$errorMsg.length) {
+                    var errorHtml = '<div class="build360-bulk-error-message">' +
+                        '<span class="dashicons dashicons-warning"></span> ' +
+                        '<span class="build360-bulk-error-text"></span>' +
+                        '</div>';
+                    $wrap.find('.build360-bulk-stats').after(errorHtml);
+                    $errorMsg = $wrap.find('.build360-bulk-error-message');
+                }
+                var errorText = data.error_message || data.error;
+                if (data.error === 'insufficient_tokens') {
+                    errorText += ' <a href="' + (this.vars.account_url || 'https://build360.gr') + '" target="_blank">' +
+                        (s.purchase_tokens || 'Purchase tokens') + ' &rarr;</a>';
+                }
+                $errorMsg.find('.build360-bulk-error-text').html(errorText);
+                $errorMsg.show();
+            }
+
             this.renderProductList(data.products);
         },
 

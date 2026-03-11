@@ -348,7 +348,9 @@ class Build360_AI_Generator {
      */
     private function build_seo_prompt($data, $is_title = false) {
         $prompt = "Generate a " . ($is_title ? "SEO title" : "meta description") . " for:\n\n";
-        $prompt .= "Content Title: " . $data['title'] . "\n";
+        // Support both 'title' and 'name' keys (direct call vs product_data)
+        $title = !empty($data['title']) ? $data['title'] : (!empty($data['name']) ? $data['name'] : '');
+        $prompt .= "Content Title: " . $title . "\n";
 
         if (!empty($data['type'])) {
             $prompt .= "Content Type: " . $data['type'] . "\n";
@@ -376,12 +378,34 @@ class Build360_AI_Generator {
     private function build_image_prompt($image_data) {
         $prompt = "Generate SEO-friendly alt text for an image with:\n\n";
 
-        if (!empty($image_data['title'])) {
-            $prompt .= "Image Title: " . $image_data['title'] . "\n";
+        // Support both 'title'/'name' keys (direct call vs product_data from generate_product_content_with_agent)
+        $title = !empty($image_data['title']) ? $image_data['title'] : (!empty($image_data['name']) ? $image_data['name'] : '');
+        if (!empty($title)) {
+            $prompt .= "Product Name: " . $title . "\n";
         }
 
-        if (!empty($image_data['context'])) {
-            $prompt .= "Context: " . $image_data['context'] . "\n";
+        // Support both 'context'/'description' keys
+        $context = !empty($image_data['context']) ? $image_data['context'] : (!empty($image_data['description']) ? $image_data['description'] : '');
+        if (!empty($context)) {
+            $prompt .= "Context: " . $context . "\n";
+        }
+
+        if (!empty($image_data['category'])) {
+            $prompt .= "Category: " . $image_data['category'] . "\n";
+        }
+
+        if (!empty($image_data['attributes']) && is_array($image_data['attributes'])) {
+            $attr_parts = array();
+            foreach ($image_data['attributes'] as $attr => $value) {
+                if (is_array($value)) {
+                    $attr_parts[] = "$attr: " . implode(', ', $value);
+                } else {
+                    $attr_parts[] = "$attr: $value";
+                }
+            }
+            if (!empty($attr_parts)) {
+                $prompt .= "Product Attributes: " . implode('; ', $attr_parts) . "\n";
+            }
         }
 
         if (!empty($image_data['keywords'])) {

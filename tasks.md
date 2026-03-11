@@ -99,7 +99,21 @@ This document tracks the improvements needed for the Build360 AI Content Generat
   - [ ] Implement request batching where appropriate
   - [ ] Add request throttling for high-volume operations
 
-### 2. New Features
+### 2. Bulk Generation Improvements (HIGH PRIORITY)
+
+- [x] Add field selection before bulk generation starts (like single product has — description, short description, SEO title, meta description)
+- [x] Add review/approve step — don't auto-apply generated content
+  - [x] User clicks "View Results" to see all generated content
+  - [x] Each product's generated fields are editable inline
+  - [x] User can Accept or Cancel per product
+  - [x] Content is applied to the product ONLY after user approves
+- [x] Internal batching (50 products per batch, auto-chaining)
+- [x] Store previews as post meta (not in wp_options blob)
+- [x] Smart dismiss (warn if unreviewed content exists)
+- [x] Token exhaustion detection — stops job, shows error with link to purchase tokens
+- [ ] Test WP Cron / Action Scheduler on production server (locally it doesn't auto-trigger, needs HTTP traffic)
+
+### 3. New Features
 
 - [ ] Enhance AI Agents functionality
   - [ ] Add ability to duplicate agents

@@ -850,7 +850,7 @@ class Build360_AI_Ajax {
             );
         }
 
-        wp_send_json_success(array(
+        $response = array(
             'job_id' => $job_data['job_id'],
             'status' => $job_data['status'],
             'total' => $job_data['total'],
@@ -858,7 +858,15 @@ class Build360_AI_Ajax {
             'succeeded' => $job_data['succeeded'],
             'failed' => $job_data['failed'],
             'products' => $products_summary,
-        ));
+        );
+
+        // Include error info if present (e.g. token exhaustion)
+        if (!empty($job_data['error'])) {
+            $response['error'] = $job_data['error'];
+            $response['error_message'] = isset($job_data['error_message']) ? $job_data['error_message'] : '';
+        }
+
+        wp_send_json_success($response);
     }
 
     /**

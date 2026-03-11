@@ -1809,6 +1809,38 @@
     color: #2271b1;
 }
 
+/* Token/error message in progress bar */
+.build360-bulk-error-message {
+    background: #fcf0f1;
+    border: 1px solid #d63638;
+    border-left: 4px solid #d63638;
+    color: #8c1a1a;
+    padding: 10px 14px;
+    margin: 8px 0 12px 0;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.build360-bulk-error-message .dashicons {
+    color: #d63638;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+}
+
+.build360-bulk-error-message a {
+    color: #2271b1;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.build360-bulk-error-message a:hover {
+    text-decoration: underline;
+}
+
 /* =====================================================
    Field Selection Modal
    ===================================================== */

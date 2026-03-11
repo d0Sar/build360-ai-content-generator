@@ -383,8 +383,8 @@ public function process_single_product_background($job_id, $product_id) {
         return;
     }
 
-    // Bail if job was cancelled
-    if ($job_data['status'] === 'cancelled') {
+    // Bail if job was cancelled or tokens exhausted
+    if ($job_data['status'] === 'cancelled' || !empty($job_data['error'])) {
         return;
     }
 
@@ -410,10 +410,10 @@ public function process_single_product_background($job_id, $product_id) {
     $generator = new Build360_AI_Generator();
 
     foreach ($fields as $field) {
-        // Re-check cancellation between fields
+        // Re-check cancellation or token exhaustion between fields
         $job_data = get_option('build360_ai_bulk_job_' . $job_id);
-        if ($job_data && $job_data['status'] === 'cancelled') {
-            return;
+        if ($job_data && ($job_data['status'] === 'cancelled' || !empty($job_data['error']))) {
+            break;
         }
 
         try {
@@ -443,7 +443,22 @@ public function process_single_product_background($job_id, $product_id) {
                     update_option('build360_ai_bulk_job_' . $job_id, $job_data, false);
                 }
             } else {
-                error_log('[Build360 AI Bulk] WP_Error for product ' . $product_id . ' field ' . $field . ': ' . $result->get_error_message());
+                $error_msg = $result->get_error_message();
+                error_log('[Build360 AI Bulk] WP_Error for product ' . $product_id . ' field ' . $field . ': ' . $error_msg);
+
+                // Check if this is a token exhaustion error — stop the entire job
+                if (strpos($error_msg, 'nsufficient token') !== false || strpos($error_msg, '403') !== false) {
+                    $job_data = get_option('build360_ai_bulk_job_' . $job_id);
+                    if (isset($job_data['products'][$product_id])) {
+                        $job_data['products'][$product_id]['field_statuses'][$field] = 'failed';
+                    }
+                    $job_data['error'] = 'insufficient_tokens';
+                    $job_data['error_message'] = __('Token balance exhausted. Please purchase more tokens to continue.', 'build360-ai');
+                    update_option('build360_ai_bulk_job_' . $job_id, $job_data, false);
+                    // Stop processing remaining fields for this product
+                    break;
+                }
+
                 $job_data = get_option('build360_ai_bulk_job_' . $job_id);
                 if (isset($job_data['products'][$product_id])) {
                     $job_data['products'][$product_id]['field_statuses'][$field] = 'failed';
@@ -510,6 +525,7 @@ private function extract_content_from_response($api_response, $field) {
             'short_description' => array('short_description', 'shortDescription', 'excerpt'),
             'seo_title' => array('seo_title', 'meta_title', 'title'),
             'seo_description' => array('seo_description', 'meta_description', 'metadesc'),
+            'image_alt' => array('image_alt', 'alt_text', 'alt', 'image_alt_text'),
         );
 
         if (isset($alt_keys[$field])) {
@@ -613,7 +629,7 @@ public function schedule_next_batch($job_id) {
         return 0;
     }
 
-    if ($job_data['status'] === 'cancelled') {
+    if ($job_data['status'] === 'cancelled' || !empty($job_data['error'])) {
         return 0;
     }
 

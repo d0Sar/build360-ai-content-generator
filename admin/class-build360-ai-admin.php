@@ -470,7 +470,9 @@ class Build360_AI_Admin {
                     'accept_all_confirm' => __('Apply generated content to all remaining products?', 'build360-ai'),
                     'dismiss_pending_warning' => __('product(s) have generated content that has not been reviewed yet. Dismiss anyway? The unreviewed content will be discarded.', 'build360-ai'),
                     'page_of' => __('Page %1$s of %2$s', 'build360-ai'),
+                    'purchase_tokens' => __('Purchase more tokens', 'build360-ai'),
                 ),
+                'account_url' => rtrim(get_option('build360_ai_domain', 'https://build360.gr'), '/') . '/account',
             ));
         }
     }
