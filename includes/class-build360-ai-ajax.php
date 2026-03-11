@@ -494,42 +494,52 @@ class Build360_AI_Ajax {
             ));
         }
 
-        // Get API key and domain from the request
-        $api_key = isset($_POST['api_key']) ? sanitize_text_field($_POST['api_key']) : '';
-        $domain = isset($_POST['domain']) ? esc_url_raw($_POST['domain']) : '';
+        // Get API key and domain from the form fields
+        $api_key = isset($_POST['api_key']) ? trim(sanitize_text_field($_POST['api_key'])) : '';
+        $domain = isset($_POST['domain']) ? trim(sanitize_text_field($_POST['domain'])) : '';
 
-        // Temporarily override the API settings
-        $original_api_key = get_option('build360_ai_api_key', '');
-        $original_domain = get_option('build360_ai_domain', '');
-
-        update_option('build360_ai_api_key', $api_key);
-        update_option('build360_ai_domain', $domain);
-
-        $api = new Build360_AI_API();
-
-        try {
-            $result = $api->test_connection();
-
-            // Restore original settings
-            update_option('build360_ai_api_key', $original_api_key);
-            update_option('build360_ai_domain', $original_domain);
-
-            if ($result === true) {
-                wp_send_json_success(array(
-                    'message' => __('Connection successful! Your API key is valid.', 'build360-ai')
-                ));
-            } else {
-                wp_send_json_error(array(
-                    'message' => __('Connection failed. Please check your API credentials.', 'build360-ai')
-                ));
-            }
-        } catch (Exception $e) {
-            // Restore original settings
-            update_option('build360_ai_api_key', $original_api_key);
-            update_option('build360_ai_domain', $original_domain);
-
+        if (empty($api_key) || empty($domain)) {
             wp_send_json_error(array(
-                'message' => $e->getMessage()
+                'message' => __('Please enter both API Key and Domain.', 'build360-ai')
+            ));
+            return;
+        }
+
+        // Ensure domain has https:// prefix
+        if (strpos($domain, 'http') !== 0) {
+            $domain = 'https://' . $domain;
+        }
+
+        $domain = rtrim($domain, '/');
+        $url = $domain . '/api/test-website-token';
+
+        $response = wp_remote_post($url, array(
+            'timeout' => 30,
+            'headers' => array(
+                'Content-Type'  => 'application/json',
+                'Accept'        => 'application/json',
+                'Authorization' => 'Bearer ' . $api_key,
+            ),
+        ));
+
+        if (is_wp_error($response)) {
+            wp_send_json_error(array(
+                'message' => sprintf('Connection error: %s (URL: %s)', $response->get_error_message(), $url)
+            ));
+            return;
+        }
+
+        $body = json_decode(wp_remote_retrieve_body($response), true);
+        $code = wp_remote_retrieve_response_code($response);
+
+        if ($code >= 200 && $code < 300 && isset($body['success']) && $body['success'] === true) {
+            wp_send_json_success(array(
+                'message' => __('Connection successful! Your API key is valid.', 'build360-ai')
+            ));
+        } else {
+            $error_msg = isset($body['message']) ? $body['message'] : __('Connection failed. Please check your API credentials.', 'build360-ai');
+            wp_send_json_error(array(
+                'message' => $error_msg
             ));
         }
     }
@@ -637,15 +647,35 @@ class Build360_AI_Ajax {
 
         update_option('build360_ai_agent_assignments', $agent_assignments_to_save);
 
-        $needs_activation = false;
+        // Auto-activate website if we have API key but no website_id
+        $activation_message = '';
         if ($api_key_was_saved && !get_option('build360_ai_website_id')) {
-            $needs_activation = true;
+            $api = new Build360_AI_API();
+            $site_url = get_site_url();
+            $parsed = wp_parse_url($site_url);
+            // Include port in domain if present (e.g. localhost:8080)
+            $site_host = isset($parsed['host']) ? $parsed['host'] : '';
+            if (!empty($parsed['port'])) {
+                $site_host .= ':' . $parsed['port'];
+            }
+            // Fallback IP: try SERVER_ADDR, then container IP, then 127.0.0.1
+            $ip_address = !empty($_SERVER['SERVER_ADDR']) ? $_SERVER['SERVER_ADDR'] : gethostbyname(gethostname());
+            if (empty($ip_address) || $ip_address === gethostname()) {
+                $ip_address = '127.0.0.1';
+            }
+
+            if ($site_host) {
+                $activate_result = $api->activate_website($site_host, get_option('build360_ai_api_key', ''), $ip_address);
+
+                if (!is_wp_error($activate_result) && isset($activate_result['success']) && $activate_result['success'] === true && isset($activate_result['data']['id'])) {
+                    update_option('build360_ai_website_id', $activate_result['data']['id']);
+                    $activation_message = ' ' . __('Website activated successfully!', 'build360-ai');
+                }
+            }
         }
 
         $this->send_json_response(array(
-            'message' => __('Settings saved successfully!', 'build360-ai'),
-            'needs_activation' => $needs_activation,
-            'saved_settings' => $sanitized_settings // Optional: send back what was saved for debugging
+            'message' => __('Settings saved successfully!', 'build360-ai') . $activation_message,
         ));
     }
 

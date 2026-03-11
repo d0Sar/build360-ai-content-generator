@@ -51,8 +51,19 @@ jQuery(document).ready(function($) {
             success: function (response) {
                 if (response.success) {
                     $result.removeClass('error').addClass('success').html(response.data.message);
+                    // Update connection status indicator
+                    $('.build360-ai-connection-status').html(
+                        '<div class="build360-ai-status-connected">' +
+                        '<span class="dashicons dashicons-yes-alt"></span> Connected to Build360 AI service' +
+                        '</div>'
+                    );
                 } else {
                     $result.removeClass('success').addClass('error').html(response.data.message);
+                    $('.build360-ai-connection-status').html(
+                        '<div class="build360-ai-status-disconnected">' +
+                        '<span class="dashicons dashicons-warning"></span> Not connected to Build360 AI service' +
+                        '</div>'
+                    );
                 }
             },
             error: function () {

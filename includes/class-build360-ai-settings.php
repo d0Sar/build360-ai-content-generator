@@ -87,12 +87,12 @@ class Build360_AI_Settings {
      */
     public function save_settings($data) {
         // Save API settings
-        if (isset($data['api_key'])) {
-            update_option('build360_ai_api_key', sanitize_text_field($data['api_key']));
+        if (isset($data['build360_ai_api_key'])) {
+            update_option('build360_ai_api_key', sanitize_text_field($data['build360_ai_api_key']));
         }
-        
-        if (isset($data['domain'])) {
-            update_option('build360_ai_domain', sanitize_text_field($data['domain']));
+
+        if (isset($data['build360_ai_domain'])) {
+            update_option('build360_ai_domain', esc_url_raw($data['build360_ai_domain']));
         }
         
         if (isset($data['text_style'])) {

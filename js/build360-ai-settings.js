@@ -253,10 +253,16 @@ jQuery(document).ready(function ($) {
                 if (response.success) {
                     $('.wrap h1').after('<div class="notice notice-success is-dismissible"><p>' + response.data.message + '</p></div>');
 
-                    if (response.data.needs_activation && build360_ai_vars.api_details) {
-                        console.log('Build360 AI: Activation needed. Triggering website activation...');
-                        triggerWebsiteActivation(); // This function is defined elsewhere in the file
+                    // Update connection status if API key and domain are filled
+                    if ($('#build360_ai_api_key').val() && $('#build360_ai_domain').val()) {
+                        $('.build360-ai-connection-status').html(
+                            '<div class="build360-ai-status-connected">' +
+                            '<span class="dashicons dashicons-yes-alt"></span> Connected to Build360 AI service' +
+                            '</div>'
+                        );
                     }
+
+                    // Activation is now handled server-side during save
                 } else {
                     $('.wrap h1').after('<div class="notice notice-error is-dismissible"><p>' + (response.data.message || 'Error saving settings.') + '</p></div>');
                 }
