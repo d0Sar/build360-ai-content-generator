@@ -39,6 +39,50 @@ $categories = array(
         </div>
     </div>
 
+    <div class="prompt-guide postbox">
+        <div class="postbox-header">
+            <h2 class="hndle" style="cursor: default; padding: 8px 12px;"><?php _e('System Prompt Guide', 'build360-ai'); ?></h2>
+        </div>
+        <div class="inside">
+            <p><?php _e('The System Prompt defines how your AI agent writes content. Use <strong>placeholders</strong> to dynamically insert product/category data:', 'build360-ai'); ?></p>
+            <table class="widefat striped" style="margin-bottom: 15px;">
+                <thead>
+                    <tr>
+                        <th><?php _e('Placeholder', 'build360-ai'); ?></th>
+                        <th><?php _e('Description', 'build360-ai'); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>{{title}}</code></td><td><?php _e('Product/category name', 'build360-ai'); ?></td></tr>
+                    <tr><td><code>{{description}}</code></td><td><?php _e('Existing description text', 'build360-ai'); ?></td></tr>
+                    <tr><td><code>{{keywords}}</code></td><td><?php _e('Keywords entered by the user during generation', 'build360-ai'); ?></td></tr>
+                    <tr><td><code>{{categories}}</code></td><td><?php _e('Product categories', 'build360-ai'); ?></td></tr>
+                    <tr><td><code>{{attributes}}</code></td><td><?php _e('Product attributes (size, color, etc.)', 'build360-ai'); ?></td></tr>
+                    <tr><td><code>{{tags}}</code></td><td><?php _e('Product tags', 'build360-ai'); ?></td></tr>
+                </tbody>
+            </table>
+            <p><strong><?php _e('Example prompt for products:', 'build360-ai'); ?></strong></p>
+            <pre style="background: #f6f7f7; padding: 12px; border: 1px solid #ddd; border-radius: 4px; white-space: pre-wrap; font-size: 13px; line-height: 1.5;">You are an expert e-commerce copywriter. Write compelling, SEO-optimized content in Greek for the product "{{title}}".
+
+Product info: {{description}}
+Categories: {{categories}}
+Tags: {{tags}}
+Attributes: {{attributes}}
+Target keywords: {{keywords}}
+
+Guidelines:
+- Write in natural, modern Greek
+- Focus on benefits, not just features
+- For descriptions: use short paragraphs, minimal HTML (&lt;p&gt;, &lt;strong&gt;, &lt;ul&gt;)
+- For short descriptions: 2-3 concise sentences highlighting key selling points
+- For meta titles: under 60 characters, include primary keyword
+- For meta descriptions: under 155 characters, with a call-to-action</pre>
+            <p class="description" style="margin-top: 10px;">
+                <?php _e('<strong>Tip:</strong> If you don\'t include <code>{{keywords}}</code> in your prompt, the keywords field on the product/category page will have no effect. Same applies to all other placeholders &mdash; only the ones you include will be used.', 'build360-ai'); ?>
+            </p>
+        </div>
+    </div>
+
     <div class="agents-list">
         <?php
         if (empty($agents)) :
@@ -114,6 +158,14 @@ $categories = array(
                         <span class="build360-tooltip" data-tooltip="<?php esc_attr_e('Instructions that define how the AI agent should behave and respond.', 'build360-ai'); ?>"><span class="dashicons dashicons-editor-help"></span></span>
                     </label>
                     <textarea id="agent-prompt" name="system_prompt" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="agent-is-active" name="is_active" checked>
+                        <?php _e('Active', 'build360-ai'); ?>
+                    </label>
+                    <p class="description"><?php _e('Only active agents can be used for content generation.', 'build360-ai'); ?></p>
                 </div>
             </form>
         </div>

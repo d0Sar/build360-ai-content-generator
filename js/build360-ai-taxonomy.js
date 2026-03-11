@@ -1,11 +1,12 @@
 /**
  * Build360 AI Taxonomy JavaScript
+ * Matches product generation flow
  */
 jQuery(document).ready(function ($) {
     var $generateBtn = $('#build360_ai_taxonomy_generate');
     var $spinner = $('#build360_ai_taxonomy_spinner');
     var $status = $('#build360_ai_taxonomy_status');
-    var $review = $('#build360_ai_taxonomy_review');
+    var $modal = $('#build360-ai-taxonomy-review-modal');
     var $reviewBody = $('#build360_ai_taxonomy_review_body');
     var storedData = {};
     var storedFields = [];
@@ -26,7 +27,8 @@ jQuery(document).ready(function ($) {
         }
 
         var termName = $('#name').val();
-        var termDescription = $('#tag-description').length ? $('#tag-description').val() : '';
+        var termDescription = $('#description').length ? $('#description').val() : ($('#tag-description').length ? $('#tag-description').val() : '');
+        var keywords = $('#build360_ai_tax_keywords').val() || '';
 
         var agentId = build360_ai_vars.current_agent_id || null;
         if (!agentId) {
@@ -40,10 +42,10 @@ jQuery(document).ready(function ($) {
             return;
         }
 
-        $generateBtn.prop('disabled', true);
+        $generateBtn.prop('disabled', true).text('Generating...');
         $spinner.addClass('is-active');
-        $status.hide();
-        $review.hide();
+        $status.removeClass('success error').hide();
+        closeModal();
 
         $.ajax({
             url: build360_ai_vars.ajax_url,
@@ -56,7 +58,8 @@ jQuery(document).ready(function ($) {
                     title: termName,
                     description: termDescription,
                     type: 'taxonomy',
-                    agent_id: agentId
+                    agent_id: agentId,
+                    keywords: keywords
                 },
                 fields_to_update: fieldsToGenerate
             },
@@ -85,16 +88,16 @@ jQuery(document).ready(function ($) {
                             hasContent = true;
                             var heading = labels[key] || key;
                             $reviewBody.append(
-                                '<div style="margin-bottom: 10px;">' +
-                                '<strong>' + heading + ':</strong>' +
-                                '<div style="background: #fff; border: 1px solid #ddd; padding: 8px; border-radius: 3px; margin-top: 4px; white-space: pre-wrap;">' + text + '</div>' +
+                                '<div class="review-field-group">' +
+                                    '<h4>' + heading + '</h4>' +
+                                    '<div class="review-content-preview">' + text + '</div>' +
                                 '</div>'
                             );
                         }
                     });
 
                     if (hasContent) {
-                        $review.show();
+                        openModal();
                     } else {
                         showStatus('No content returned.', 'error');
                     }
@@ -108,15 +111,13 @@ jQuery(document).ready(function ($) {
             },
             complete: function () {
                 $spinner.removeClass('is-active');
-                if (!$review.is(':visible')) {
-                    $generateBtn.prop('disabled', false);
-                }
+                $generateBtn.prop('disabled', false).text('Generate Content');
             }
         });
     });
 
     // Approve: apply content to fields
-    $('#build360_ai_taxonomy_approve').on('click', function () {
+    $(document).on('click', '.build360-ai-taxonomy-approve', function () {
         storedFields.forEach(function (key) {
             var text = null;
             if (key === 'description' && storedData.content) text = storedData.content;
@@ -125,42 +126,64 @@ jQuery(document).ready(function ($) {
 
             if (text) {
                 if (key === 'description') {
-                    $('#tag-description').val(text);
+                    // TinyMCE first (taxonomy edit page uses it)
+                    if (typeof tinymce !== 'undefined' && tinymce.get('description')) {
+                        tinymce.get('description').setContent(text);
+                    }
+                    // Also set the textarea (for Code/text mode)
+                    var $descField = $('#description').length ? $('#description') : $('#tag-description');
+                    $descField.val(text).trigger('change');
                 } else if (key === 'seo_title') {
-                    // Yoast taxonomy SEO title
-                    $('input[name="wpseo_taxonomy_meta[title]"], #wpseo_taxonomy_title, input[name="rank_math_title"]').val(text).trigger('input');
+                    // Hidden input (submitted with form)
+                    $('#hidden_wpseo_title').val(text).trigger('change');
+                    // Update Yoast React UI via Redux store (same as product JS)
+                    if (window.wp && wp.data && wp.data.dispatch('yoast-seo/editor')) {
+                        wp.data.dispatch('yoast-seo/editor').updateData({ title: text });
+                    }
+                    // RankMath fallback
+                    $('input[name="rank_math_title"]').val(text).trigger('input');
                 } else if (key === 'seo_description') {
-                    // Yoast taxonomy SEO description
-                    $('textarea[name="wpseo_taxonomy_meta[desc]"], #wpseo_taxonomy_desc, textarea[name="rank_math_description"]').val(text).trigger('input');
+                    // Hidden input (submitted with form)
+                    $('#hidden_wpseo_desc').val(text).trigger('change');
+                    // Update Yoast React UI via Redux store (same as product JS)
+                    if (window.wp && wp.data && wp.data.dispatch('yoast-seo/editor')) {
+                        wp.data.dispatch('yoast-seo/editor').updateData({ description: text });
+                    }
+                    // RankMath fallback
+                    $('textarea[name="rank_math_description"]').val(text).trigger('input');
                 }
             }
         });
 
-        $review.hide();
+        closeModal();
         showStatus('Fields updated. Click "Update" to save the term.', 'success');
-        $generateBtn.prop('disabled', false);
     });
 
     // Cancel
-    $('#build360_ai_taxonomy_cancel').on('click', function () {
-        $review.hide();
-        $generateBtn.prop('disabled', false);
+    $(document).on('click', '.build360-ai-taxonomy-cancel', function () {
+        closeModal();
     });
 
     // Retry
-    $('#build360_ai_taxonomy_retry').on('click', function () {
-        $review.hide();
-        $generateBtn.prop('disabled', false).trigger('click');
+    $(document).on('click', '.build360-ai-taxonomy-retry', function () {
+        closeModal();
+        $generateBtn.trigger('click');
     });
 
+    // Close modal on overlay click
+    $(document).on('click', '#build360-ai-taxonomy-review-modal .modal-overlay', function () {
+        closeModal();
+    });
+
+    function openModal() {
+        $modal.css('display', 'flex');
+    }
+
+    function closeModal() {
+        $modal.hide();
+    }
+
     function showStatus(message, type) {
-        var bgColor = type === 'error' ? '#f8d7da' : '#d1e7dd';
-        var textColor = type === 'error' ? '#842029' : '#0f5132';
-        var borderColor = type === 'error' ? '#f5c2c7' : '#badbcc';
-        $status.css({
-            'background-color': bgColor,
-            'color': textColor,
-            'border': '1px solid ' + borderColor
-        }).text(message).show();
+        $status.removeClass('success error').addClass(type).text(message).show();
     }
 });

@@ -347,14 +347,13 @@ jQuery(document).ready(function ($) {
 
     // Show modal
     function showModal() {
-        $modal.addClass('active').fadeIn(200); // Use jQuery fadeIn for smoother effect
-        $('body').addClass('modal-open'); // Prevent background scrolling
+        $modal.addClass('active').fadeIn(200);
     }
 
     // Hide modal
     function hideModal() {
         $modal.removeClass('active').fadeOut(200);
-        $('body').removeClass('modal-open');
+        $('body').removeClass('modal-open'); // cleanup in case it was set
         resetForm(); // Reset form when modal is hidden
     }
 

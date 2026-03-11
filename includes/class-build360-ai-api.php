@@ -147,7 +147,9 @@ class Build360_AI_API {
             $decoded_body = json_decode($body, true);
             
             $error_message = __('Unknown API error', 'build360-ai'); // Default message
-            if (is_array($decoded_body) && isset($decoded_body['message'])) {
+            if (is_array($decoded_body) && isset($decoded_body['error'])) {
+                $error_message = $decoded_body['error'];
+            } elseif (is_array($decoded_body) && isset($decoded_body['message'])) {
                 $error_message = $decoded_body['message'];
             } elseif (!empty($body) && is_string($body)) {
                 // If body is not JSON or JSON doesn't have 'message', use a snippet of the body.
