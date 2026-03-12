@@ -253,6 +253,10 @@ jQuery(document).ready(function ($) {
                         wp.data.dispatch('yoast-seo/editor').updateData({ description: textToApply });
                     }
                 }
+                else if (key === 'image_alt') {
+                    // image_alt is saved server-side during generation, no client-side apply needed
+                    console.log('Build360 AI: image_alt already saved server-side: ' + textToApply);
+                }
             }
         });
         $status.removeClass('error').addClass('success').text('Fields updated').show();

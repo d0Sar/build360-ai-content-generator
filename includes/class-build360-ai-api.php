@@ -380,6 +380,7 @@ class Build360_AI_API {
             'attributes'          => $attributes,
             'tags'                => $tags,
             'keywords'            => $keywords,
+            'fields_requested'    => $fields_requested,
         );
         
         // TODO: Confirm which API key to use for Authorization: Bearer YOUR_WEBSITE_API_KEY

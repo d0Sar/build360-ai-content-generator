@@ -245,7 +245,12 @@ class Build360_AI_Ajax {
             // (e.g., 'description', 'seo_title') and values are the generated content.
             // Example: { "description": "Generated full desc...", "seo_title": "Generated SEO Title" }
             
-            $generated_content_map = $api_response; // Assuming direct map from API
+            // Unwrap the API response — Laravel wraps in {success, data: {...}, tokens_used, word_count}
+            if (is_array($api_response) && isset($api_response['data']) && is_array($api_response['data'])) {
+                $generated_content_map = $api_response['data'];
+            } else {
+                $generated_content_map = $api_response; // Fallback: assume flat map
+            }
             error_log('[Build360 AI DEBUG] API response structure: ' . print_r($api_response, true));
             error_log('[Build360 AI DEBUG] fields_to_update: ' . print_r($fields_to_update, true));
             $update_errors = array();
