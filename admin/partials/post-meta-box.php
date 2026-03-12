@@ -30,15 +30,6 @@ wp_nonce_field('build360_ai_generate_content', 'build360_ai_nonce');
                 <span class="token-count"><?php echo date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($last_generated)); ?></span>
             </div>
         <?php endif; ?>
-        <div class="language-selector">
-            <select id="build360_ai_language">
-                <option value="en">English</option>
-                <option value="el">Ελληνικά</option>
-                <option value="es">Español</option>
-                <option value="fr">Français</option>
-                <option value="de">Deutsch</option>
-            </select>
-        </div>
     </div>
 
     <div class="content-fields">
@@ -46,11 +37,13 @@ wp_nonce_field('build360_ai_generate_content', 'build360_ai_nonce');
             <span class="build360-tooltip" data-tooltip="<?php esc_attr_e('Select which fields to generate. Existing content will be replaced.', 'build360-ai'); ?>"><span class="dashicons dashicons-editor-help"></span></span>
         </h4>
         <div class="field-grid">
+            <?php if ($post_obj->post_type !== 'page') : ?>
             <label class="field-label">
                 <input type="checkbox" name="build360_ai_fields[]" value="content" />
                 <span class="checkbox-custom"></span>
                 <span class="label-text"><?php _e('Post Content', 'build360-ai'); ?></span>
             </label>
+            <?php endif; ?>
             <label class="field-label">
                 <input type="checkbox" name="build360_ai_fields[]" value="seo_title" />
                 <span class="checkbox-custom"></span>
@@ -132,14 +125,6 @@ wp_nonce_field('build360_ai_generate_content', 'build360_ai_nonce');
 }
 .token-label { font-weight: 600; margin-right: 8px; color: #2271b1; }
 .token-count { font-weight: 700; color: #135e96; }
-.language-selector select {
-    padding: 6px 10px;
-    border-radius: 4px;
-    border: 1px solid #ddd;
-    background-color: #f8f9fa;
-    cursor: pointer;
-    font-size: 13px;
-}
 .content-fields {
     margin-bottom: 20px;
     padding: 15px;
@@ -215,7 +200,6 @@ wp_nonce_field('build360_ai_generate_content', 'build360_ai_nonce');
 }
 @media screen and (max-width: 782px) {
     .build360-ai-header { flex-direction: column; align-items: flex-start; gap: 10px; }
-    .language-selector, .language-selector select { width: 100%; }
-    .field-grid { grid-template-columns: 1fr; }
+.field-grid { grid-template-columns: 1fr; }
 }
 </style>

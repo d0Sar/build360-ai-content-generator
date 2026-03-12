@@ -114,6 +114,15 @@ class Build360_AI_Ajax {
         add_action('wp_ajax_build360_ai_bulk_term_apply_all', array($this, 'bulk_term_apply_all_handler'));
         add_action('wp_ajax_build360_ai_bulk_term_cancel', array($this, 'bulk_term_cancel_handler'));
         add_action('wp_ajax_build360_ai_bulk_term_dismiss', array($this, 'bulk_term_dismiss_handler'));
+        // Bulk PAGE generation endpoints
+        add_action('wp_ajax_build360_ai_start_bulk_pages', array($this, 'start_bulk_pages_handler'));
+        add_action('wp_ajax_build360_ai_bulk_page_progress', array($this, 'bulk_page_progress_handler'));
+        add_action('wp_ajax_build360_ai_bulk_page_review', array($this, 'bulk_page_review_handler'));
+        add_action('wp_ajax_build360_ai_bulk_page_apply', array($this, 'bulk_page_apply_handler'));
+        add_action('wp_ajax_build360_ai_bulk_page_reject', array($this, 'bulk_page_reject_handler'));
+        add_action('wp_ajax_build360_ai_bulk_page_apply_all', array($this, 'bulk_page_apply_all_handler'));
+        add_action('wp_ajax_build360_ai_bulk_page_cancel', array($this, 'bulk_page_cancel_handler'));
+        add_action('wp_ajax_build360_ai_bulk_page_dismiss', array($this, 'bulk_page_dismiss_handler'));
     }
 
     /**
@@ -237,10 +246,12 @@ class Build360_AI_Ajax {
             // Example: { "description": "Generated full desc...", "seo_title": "Generated SEO Title" }
             
             $generated_content_map = $api_response; // Assuming direct map from API
+            error_log('[Build360 AI DEBUG] API response structure: ' . print_r($api_response, true));
+            error_log('[Build360 AI DEBUG] fields_to_update: ' . print_r($fields_to_update, true));
             $update_errors = array();
 
             if ($product_id && $generated_content_map && is_array($generated_content_map)) {
-                $product = wc_get_product($product_id); 
+                $product = wc_get_product($product_id);
                 if ($product) {
                     foreach ($fields_to_update as $field_key) { // $field_key is 'description', 'seo_title', 'title', etc.
                         
@@ -419,7 +430,7 @@ class Build360_AI_Ajax {
                 } else {
                      error_log('[Build360 AI] Could not retrieve product with ID: ' . $product_id);
                 }
-            } elseif ($product_id && $generated_content_map && is_array($generated_content_map)) {
+            } else {
                 // Post/Page save path (not a WooCommerce product)
                 $post_obj = get_post($product_id);
                 if ($post_obj && in_array($post_obj->post_type, array('post', 'page'))) {
@@ -481,8 +492,6 @@ class Build360_AI_Ajax {
                     );
                     $this->add_to_recent_activity($activity_message);
                 }
-            } elseif ($product_id) {
-                 error_log('[Build360 AI] Generated content map was empty or not an array for ID: ' . $product_id . '. Map: ' . print_r($generated_content_map, true));
             }
 
             // Prepare success response for JS
@@ -1895,6 +1904,484 @@ class Build360_AI_Ajax {
         if (!empty($job_id)) {
             $this->preview_store->delete_job($job_id);
             delete_option('build360_ai_bulk_term_job_' . $job_id);
+        }
+
+        wp_send_json_success(array('dismissed' => true));
+    }
+
+    // =========================================================================
+    // Bulk PAGE generation handlers
+    // =========================================================================
+
+    /**
+     * Start a bulk page generation job
+     */
+    public function start_bulk_pages_handler() {
+        check_ajax_referer('build360_ai_start_bulk_pages_nonce', 'nonce');
+
+        if (!current_user_can('edit_pages')) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'build360-ai')));
+            return;
+        }
+
+        $page_ids = isset($_POST['page_ids']) && is_array($_POST['page_ids']) ? array_map('intval', $_POST['page_ids']) : array();
+        $fields = isset($_POST['fields']) && is_array($_POST['fields']) ? array_map('sanitize_text_field', $_POST['fields']) : array();
+
+        if (empty($page_ids)) {
+            wp_send_json_error(array('message' => __('No pages selected.', 'build360-ai')));
+            return;
+        }
+
+        if (empty($fields)) {
+            wp_send_json_error(array('message' => __('No fields selected.', 'build360-ai')));
+            return;
+        }
+
+        $allowed_fields = array('seo_title', 'seo_description');
+        $fields = array_intersect($fields, $allowed_fields);
+        if (empty($fields)) {
+            wp_send_json_error(array('message' => __('No valid fields selected.', 'build360-ai')));
+            return;
+        }
+
+        // Find agent for page
+        $agent_assignments = get_option('build360_ai_agent_assignments', array());
+        $page_agent_id = null;
+        foreach ($agent_assignments as $assignment) {
+            if (isset($assignment['type']) && $assignment['type'] === 'page' && isset($assignment['agent_id'])) {
+                $page_agent_id = $assignment['agent_id'];
+                break;
+            }
+        }
+
+        if (empty($page_agent_id)) {
+            wp_send_json_error(array('message' => __('No AI Agent is assigned to the page content type. Please check plugin settings.', 'build360-ai')));
+            return;
+        }
+
+        $job_id = 'bulk_page_' . wp_generate_uuid4();
+        $pages_data = array();
+
+        foreach ($page_ids as $pid) {
+            $page = get_post($pid);
+            if (!$page || $page->post_type !== 'page') {
+                continue;
+            }
+            $pages_data[$pid] = array(
+                'name' => $page->post_title,
+                'status' => 'pending',
+                'field_statuses' => array(),
+            );
+            foreach ($fields as $field) {
+                $pages_data[$pid]['field_statuses'][$field] = 'pending';
+            }
+        }
+
+        if (empty($pages_data)) {
+            wp_send_json_error(array('message' => __('No valid pages found.', 'build360-ai')));
+            return;
+        }
+
+        $job_data = array(
+            'job_id' => $job_id,
+            'status' => 'processing',
+            'user_id' => get_current_user_id(),
+            'total' => count($pages_data),
+            'completed' => 0,
+            'succeeded' => 0,
+            'failed' => 0,
+            'fields' => array_values($fields),
+            'agent_id' => $page_agent_id,
+            'pages' => $pages_data,
+            'created_at' => current_time('mysql'),
+        );
+
+        update_option('build360_ai_bulk_page_job_' . $job_id, $job_data, false);
+        update_user_meta(get_current_user_id(), '_build360_ai_active_bulk_page_job', $job_id);
+
+        $post_integration = new Build360_AI_Post_Integration();
+        $post_integration->schedule_next_page_batch($job_id);
+
+        if (function_exists('as_schedule_single_action')) {
+            as_schedule_single_action(
+                time() + 3600,
+                'build360_ai_cleanup_bulk_page_job',
+                array($job_id),
+                'build360-ai'
+            );
+        }
+
+        wp_send_json_success(array(
+            'message' => sprintf(__('Bulk generation started for %d pages.', 'build360-ai'), count($pages_data)),
+            'job_id' => $job_id,
+        ));
+    }
+
+    /**
+     * Get progress for a bulk page job
+     */
+    public function bulk_page_progress_handler() {
+        check_ajax_referer('build360_ai_bulk_page_progress_nonce', 'nonce');
+
+        if (!current_user_can('edit_pages')) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'build360-ai')));
+            return;
+        }
+
+        $job_id = isset($_POST['job_id']) ? sanitize_text_field($_POST['job_id']) : '';
+        if (empty($job_id)) {
+            $job_id = get_user_meta(get_current_user_id(), '_build360_ai_active_bulk_page_job', true);
+        }
+
+        if (empty($job_id)) {
+            wp_send_json_error(array('message' => __('No active bulk page job found.', 'build360-ai'), 'no_job' => true));
+            return;
+        }
+
+        $job_data = get_option('build360_ai_bulk_page_job_' . $job_id);
+        if (!$job_data || !is_array($job_data)) {
+            delete_user_meta(get_current_user_id(), '_build360_ai_active_bulk_page_job');
+            wp_send_json_error(array('message' => __('Bulk page job data not found.', 'build360-ai'), 'no_job' => true));
+            return;
+        }
+
+        $pages_summary = array();
+        foreach ($job_data['pages'] as $pid => $pdata) {
+            $field_statuses = isset($pdata['field_statuses']) ? $pdata['field_statuses'] : array();
+            $pages_summary[$pid] = array(
+                'name' => $pdata['name'],
+                'status' => $pdata['status'],
+                'fields' => $field_statuses,
+            );
+        }
+
+        $response = array(
+            'job_id' => $job_data['job_id'],
+            'status' => $job_data['status'],
+            'total' => $job_data['total'],
+            'completed' => $job_data['completed'],
+            'succeeded' => $job_data['succeeded'],
+            'failed' => $job_data['failed'],
+            'pages' => $pages_summary,
+        );
+
+        if (!empty($job_data['error'])) {
+            $response['error'] = $job_data['error'];
+            $response['error_message'] = isset($job_data['error_message']) ? $job_data['error_message'] : '';
+        }
+
+        wp_send_json_success($response);
+    }
+
+    /**
+     * Get paginated review data for a completed bulk page job
+     */
+    public function bulk_page_review_handler() {
+        check_ajax_referer('build360_ai_bulk_page_review_nonce', 'nonce');
+
+        if (!current_user_can('edit_pages')) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'build360-ai')));
+            return;
+        }
+
+        $job_id = isset($_POST['job_id']) ? sanitize_text_field($_POST['job_id']) : '';
+        $page = isset($_POST['page']) ? max(1, intval($_POST['page'])) : 1;
+        $per_page = isset($_POST['per_page']) ? max(1, min(50, intval($_POST['per_page']))) : 20;
+
+        if (empty($job_id)) {
+            $job_id = get_user_meta(get_current_user_id(), '_build360_ai_active_bulk_page_job', true);
+        }
+
+        if (empty($job_id)) {
+            wp_send_json_error(array('message' => __('No active bulk page job found.', 'build360-ai')));
+            return;
+        }
+
+        $job_data = get_option('build360_ai_bulk_page_job_' . $job_id);
+        if (!$job_data || !is_array($job_data)) {
+            wp_send_json_error(array('message' => __('Bulk page job data not found.', 'build360-ai')));
+            return;
+        }
+
+        $fields = isset($job_data['fields']) ? $job_data['fields'] : array();
+
+        $all_page_ids = array();
+        foreach ($job_data['pages'] as $pid => $pdata) {
+            if ($pdata['status'] === 'completed') {
+                $all_page_ids[] = $pid;
+            }
+        }
+
+        $total_pages_count = count($all_page_ids);
+        $total_pages = max(1, ceil($total_pages_count / $per_page));
+        $page = min($page, $total_pages);
+        $offset = ($page - 1) * $per_page;
+        $page_ids_slice = array_slice($all_page_ids, $offset, $per_page);
+
+        $pages_detail = array();
+        foreach ($page_ids_slice as $pid) {
+            $post_obj = get_post($pid);
+            $page_info = array(
+                'id' => $pid,
+                'name' => isset($job_data['pages'][$pid]['name']) ? $job_data['pages'][$pid]['name'] : '',
+                'edit_url' => ($post_obj) ? get_edit_post_link($pid, 'raw') : '',
+                'previews' => array(),
+                'review_status' => 'pending_review',
+            );
+
+            $entity_previews = $this->preview_store->get_all_for_entity($pid, 'page');
+            if (!empty($entity_previews)) {
+                $page_info['previews'] = $entity_previews;
+            } else {
+                $page_info['review_status'] = 'applied';
+            }
+
+            $pages_detail[] = $page_info;
+        }
+
+        // Calculate expiration time (oldest preview + 1 hour)
+        $oldest = $this->preview_store->get_oldest_created_at($job_id);
+        $expires_at = $oldest ? gmdate('Y-m-d\TH:i:s\Z', strtotime($oldest) + 3600) : null;
+
+        wp_send_json_success(array(
+            'job_id' => $job_id,
+            'fields' => $fields,
+            'pages' => $pages_detail,
+            'page' => $page,
+            'per_page' => $per_page,
+            'total_pages_count' => $total_pages_count,
+            'total_pages' => $total_pages,
+            'expires_at' => $expires_at,
+        ));
+    }
+
+    /**
+     * Apply generated content to a single page
+     */
+    public function bulk_page_apply_handler() {
+        check_ajax_referer('build360_ai_bulk_page_apply_nonce', 'nonce');
+
+        if (!current_user_can('edit_pages')) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'build360-ai')));
+            return;
+        }
+
+        $page_id = isset($_POST['page_id']) ? intval($_POST['page_id']) : 0;
+        $edits = isset($_POST['edits']) && is_array($_POST['edits']) ? $_POST['edits'] : array();
+
+        if ($page_id <= 0) {
+            wp_send_json_error(array('message' => __('Invalid page ID.', 'build360-ai')));
+            return;
+        }
+
+        $page = get_post($page_id);
+        if (!$page || $page->post_type !== 'page') {
+            wp_send_json_error(array('message' => __('Page not found.', 'build360-ai')));
+            return;
+        }
+
+        $post_integration = new Build360_AI_Post_Integration();
+        $stored_previews = $this->preview_store->get_all_for_entity($page_id, 'page');
+        $preview_fields = array('seo_title', 'seo_description');
+        $fields_applied = 0;
+
+        foreach ($preview_fields as $field) {
+            if (isset($edits[$field]) && $edits[$field] !== '') {
+                $content = wp_unslash($edits[$field]);
+            } else {
+                $content = isset($stored_previews[$field]) ? $stored_previews[$field] : '';
+            }
+
+            if ($content === '' || $content === null) {
+                continue;
+            }
+
+            $post_integration->apply_page_field_content($page_id, $field, $content);
+            $fields_applied++;
+        }
+
+        if ($fields_applied > 0) {
+            update_post_meta($page_id, '_build360_ai_last_generated', current_time('mysql'));
+        }
+
+        $this->preview_store->delete_entity($page_id, 'page');
+
+        wp_send_json_success(array(
+            'message' => sprintf(__('Content applied to %s (%d fields).', 'build360-ai'), $page->post_title, $fields_applied),
+            'page_id' => $page_id,
+            'fields_applied' => $fields_applied,
+        ));
+    }
+
+    /**
+     * Reject/skip a page's generated content
+     */
+    public function bulk_page_reject_handler() {
+        check_ajax_referer('build360_ai_bulk_page_reject_nonce', 'nonce');
+
+        if (!current_user_can('edit_pages')) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'build360-ai')));
+            return;
+        }
+
+        $page_id = isset($_POST['page_id']) ? intval($_POST['page_id']) : 0;
+
+        if ($page_id <= 0) {
+            wp_send_json_error(array('message' => __('Invalid page ID.', 'build360-ai')));
+            return;
+        }
+
+        $this->preview_store->delete_entity($page_id, 'page');
+
+        wp_send_json_success(array(
+            'message' => __('Page skipped.', 'build360-ai'),
+            'page_id' => $page_id,
+        ));
+    }
+
+    /**
+     * Apply all remaining pages that have preview data
+     */
+    public function bulk_page_apply_all_handler() {
+        check_ajax_referer('build360_ai_bulk_page_apply_all_nonce', 'nonce');
+
+        if (!current_user_can('edit_pages')) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'build360-ai')));
+            return;
+        }
+
+        $job_id = isset($_POST['job_id']) ? sanitize_text_field($_POST['job_id']) : '';
+        if (empty($job_id)) {
+            $job_id = get_user_meta(get_current_user_id(), '_build360_ai_active_bulk_page_job', true);
+        }
+
+        if (empty($job_id)) {
+            wp_send_json_error(array('message' => __('No active bulk page job found.', 'build360-ai')));
+            return;
+        }
+
+        $job_data = get_option('build360_ai_bulk_page_job_' . $job_id);
+        if (!$job_data || !is_array($job_data)) {
+            wp_send_json_error(array('message' => __('Bulk page job data not found.', 'build360-ai')));
+            return;
+        }
+
+        $post_integration = new Build360_AI_Post_Integration();
+        $applied_count = 0;
+
+        foreach ($job_data['pages'] as $pid => $pdata) {
+            if ($pdata['status'] !== 'completed') {
+                continue;
+            }
+
+            $entity_previews = $this->preview_store->get_all_for_entity($pid, 'page');
+            if (empty($entity_previews)) {
+                continue;
+            }
+
+            foreach ($entity_previews as $field => $content) {
+                $post_integration->apply_page_field_content($pid, $field, $content);
+            }
+
+            update_post_meta($pid, '_build360_ai_last_generated', current_time('mysql'));
+            $this->preview_store->delete_entity($pid, 'page');
+            $applied_count++;
+        }
+
+        wp_send_json_success(array(
+            'message' => sprintf(__('Content applied to %d pages.', 'build360-ai'), $applied_count),
+            'applied_count' => $applied_count,
+        ));
+    }
+
+    /**
+     * Cancel a running bulk page job
+     */
+    public function bulk_page_cancel_handler() {
+        check_ajax_referer('build360_ai_bulk_page_cancel_nonce', 'nonce');
+
+        if (!current_user_can('edit_pages')) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'build360-ai')));
+            return;
+        }
+
+        $job_id = isset($_POST['job_id']) ? sanitize_text_field($_POST['job_id']) : '';
+        if (empty($job_id)) {
+            $job_id = get_user_meta(get_current_user_id(), '_build360_ai_active_bulk_page_job', true);
+        }
+
+        if (empty($job_id)) {
+            wp_send_json_error(array('message' => __('No active bulk page job found.', 'build360-ai')));
+            return;
+        }
+
+        $job_data = get_option('build360_ai_bulk_page_job_' . $job_id);
+        if (!$job_data || !is_array($job_data)) {
+            wp_send_json_error(array('message' => __('Bulk page job data not found.', 'build360-ai')));
+            return;
+        }
+
+        $job_data['status'] = 'cancelled';
+        update_option('build360_ai_bulk_page_job_' . $job_id, $job_data, false);
+
+        if (function_exists('as_unschedule_all_actions')) {
+            as_unschedule_all_actions('build360_ai_process_single_page', null, 'build360-ai');
+        }
+
+        delete_user_meta(get_current_user_id(), '_build360_ai_active_bulk_page_job');
+
+        wp_send_json_success(array(
+            'message' => __('Bulk page generation job has been cancelled.', 'build360-ai'),
+            'job_id' => $job_id,
+        ));
+    }
+
+    /**
+     * Dismiss bulk page progress bar
+     */
+    public function bulk_page_dismiss_handler() {
+        check_ajax_referer('build360_ai_bulk_page_dismiss_nonce', 'nonce');
+
+        if (!current_user_can('edit_pages')) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'build360-ai')));
+            return;
+        }
+
+        $force = isset($_POST['force']) && $_POST['force'] === '1';
+        $job_id = isset($_POST['job_id']) ? sanitize_text_field($_POST['job_id']) : '';
+        if (empty($job_id)) {
+            $job_id = get_user_meta(get_current_user_id(), '_build360_ai_active_bulk_page_job', true);
+        }
+
+        if (!$force && !empty($job_id)) {
+            $job_data = get_option('build360_ai_bulk_page_job_' . $job_id);
+            if ($job_data && is_array($job_data) && isset($job_data['pages'])) {
+                $pending_review_count = 0;
+
+                foreach ($job_data['pages'] as $pid => $pdata) {
+                    if ($pdata['status'] !== 'completed') {
+                        continue;
+                    }
+                    if ($this->preview_store->has_previews($pid, 'page')) {
+                        $pending_review_count++;
+                    }
+                }
+
+                if ($pending_review_count > 0) {
+                    wp_send_json_success(array(
+                        'has_pending_reviews' => true,
+                        'pending_count' => $pending_review_count,
+                    ));
+                    return;
+                }
+            }
+        }
+
+        delete_user_meta(get_current_user_id(), '_build360_ai_active_bulk_page_job');
+
+        if (!empty($job_id)) {
+            $this->preview_store->delete_job($job_id);
+            delete_option('build360_ai_bulk_page_job_' . $job_id);
         }
 
         wp_send_json_success(array('dismissed' => true));
