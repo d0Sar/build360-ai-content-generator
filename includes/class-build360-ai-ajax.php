@@ -36,6 +36,13 @@ class Build360_AI_Ajax {
     private $product_integration;
 
     /**
+     * Preview store instance
+     *
+     * @var Build360_AI_Preview_Store
+     */
+    private $preview_store;
+
+    /**
      * Log file path
      * @var string
      */
@@ -48,6 +55,7 @@ class Build360_AI_Ajax {
         $this->settings = new Build360_AI_Settings();
         $this->api = new Build360_AI_API();
         $this->product_integration = new Build360_AI_Product_Integration();
+        $this->preview_store = new Build360_AI_Preview_Store();
         
         // Define log file path directly using plugin_dir_path
         $this->log_file = plugin_dir_path(__FILE__) . '../logs/debug_agent_save.log'; // Adjusted path
@@ -915,7 +923,7 @@ class Build360_AI_Ajax {
                 foreach ($pdata['field_statuses'] as $fname => $fstatus) {
                     $preview = '';
                     if ($fstatus === 'completed') {
-                        $full_content = get_post_meta($pid, '_build360_ai_preview_' . $fname, true);
+                        $full_content = $this->preview_store->get($pid, 'product', $fname);
                         if ($full_content) {
                             $preview = mb_substr(wp_strip_all_tags($full_content), 0, 100);
                         }
@@ -1017,19 +1025,14 @@ class Build360_AI_Ajax {
         if (!$force && !empty($job_id)) {
             $job_data = get_option('build360_ai_bulk_job_' . $job_id);
             if ($job_data && is_array($job_data) && isset($job_data['products'])) {
-                $preview_fields = array('description', 'short_description', 'seo_title', 'seo_description', 'image_alt');
                 $pending_review_count = 0;
 
                 foreach ($job_data['products'] as $pid => $pdata) {
                     if ($pdata['status'] !== 'completed') {
                         continue;
                     }
-                    foreach ($preview_fields as $field) {
-                        $preview = get_post_meta($pid, '_build360_ai_preview_' . $field, true);
-                        if ($preview !== '' && $preview !== false) {
-                            $pending_review_count++;
-                            break; // One field is enough to know this product has pending reviews
-                        }
+                    if ($this->preview_store->has_previews($pid, 'product')) {
+                        $pending_review_count++;
                     }
                 }
 
@@ -1047,16 +1050,7 @@ class Build360_AI_Ajax {
         delete_user_meta(get_current_user_id(), '_build360_ai_active_bulk_job');
 
         if (!empty($job_id)) {
-            $job_data = get_option('build360_ai_bulk_job_' . $job_id);
-            if ($job_data && is_array($job_data) && isset($job_data['products'])) {
-                $preview_fields = array('description', 'short_description', 'seo_title', 'seo_description', 'image_alt');
-                foreach (array_keys($job_data['products']) as $pid) {
-                    foreach ($preview_fields as $field) {
-                        delete_post_meta($pid, '_build360_ai_preview_' . $field);
-                    }
-                    delete_post_meta($pid, '_build360_ai_preview_job_id');
-                }
-            }
+            $this->preview_store->delete_job($job_id);
             delete_option('build360_ai_bulk_job_' . $job_id);
         }
 
@@ -1226,22 +1220,20 @@ class Build360_AI_Ajax {
                 'review_status' => 'pending_review',
             );
 
-            // Check if content was already applied (preview meta cleaned up)
-            $has_previews = false;
-            foreach ($fields as $field) {
-                $preview_content = get_post_meta($pid, '_build360_ai_preview_' . $field, true);
-                if ($preview_content !== '' && $preview_content !== false) {
-                    $product_info['previews'][$field] = $preview_content;
-                    $has_previews = true;
-                }
-            }
-
-            if (!$has_previews) {
+            // Check if content was already applied (preview cleaned up)
+            $entity_previews = $this->preview_store->get_all_for_entity($pid, 'product');
+            if (!empty($entity_previews)) {
+                $product_info['previews'] = $entity_previews;
+            } else {
                 $product_info['review_status'] = 'applied';
             }
 
             $products_detail[] = $product_info;
         }
+
+        // Calculate expiration time (oldest preview + 1 hour)
+        $oldest = $this->preview_store->get_oldest_created_at($job_id);
+        $expires_at = $oldest ? gmdate('Y-m-d\TH:i:s\Z', strtotime($oldest) + 3600) : null;
 
         wp_send_json_success(array(
             'job_id' => $job_id,
@@ -1251,6 +1243,7 @@ class Build360_AI_Ajax {
             'per_page' => $per_page,
             'total_products' => $total_products,
             'total_pages' => $total_pages,
+            'expires_at' => $expires_at,
         ));
     }
 
@@ -1279,8 +1272,8 @@ class Build360_AI_Ajax {
             return;
         }
 
-        $job_id = get_post_meta($product_id, '_build360_ai_preview_job_id', true);
         $fields_applied = 0;
+        $stored_previews = $this->preview_store->get_all_for_entity($product_id, 'product');
         $preview_fields = array('description', 'short_description', 'seo_title', 'seo_description', 'image_alt');
 
         foreach ($preview_fields as $field) {
@@ -1288,19 +1281,16 @@ class Build360_AI_Ajax {
             if (isset($edits[$field]) && $edits[$field] !== '') {
                 $content = wp_unslash($edits[$field]);
             } else {
-                $content = get_post_meta($product_id, '_build360_ai_preview_' . $field, true);
+                $content = isset($stored_previews[$field]) ? $stored_previews[$field] : '';
             }
 
-            if ($content === '' || $content === false) {
+            if ($content === '' || $content === null) {
                 continue;
             }
 
             // Apply content using the existing method in product integration
             $this->product_integration->apply_field_content_public($product, $product_id, $field, $content);
             $fields_applied++;
-
-            // Clean up preview meta for this field
-            delete_post_meta($product_id, '_build360_ai_preview_' . $field);
         }
 
         if ($fields_applied > 0) {
@@ -1315,8 +1305,8 @@ class Build360_AI_Ajax {
             update_option('build360_ai_products_enhanced', $current_products + 1);
         }
 
-        // Clean up job reference meta
-        delete_post_meta($product_id, '_build360_ai_preview_job_id');
+        // Clean up all previews for this entity
+        $this->preview_store->delete_entity($product_id, 'product');
 
         wp_send_json_success(array(
             'message' => sprintf(__('Content applied to %s (%d fields).', 'build360-ai'), $product->get_name(), $fields_applied),
@@ -1343,12 +1333,8 @@ class Build360_AI_Ajax {
             return;
         }
 
-        // Delete all preview meta for this product
-        $preview_fields = array('description', 'short_description', 'seo_title', 'seo_description', 'image_alt');
-        foreach ($preview_fields as $field) {
-            delete_post_meta($product_id, '_build360_ai_preview_' . $field);
-        }
-        delete_post_meta($product_id, '_build360_ai_preview_job_id');
+        // Delete all previews for this product
+        $this->preview_store->delete_entity($product_id, 'product');
 
         wp_send_json_success(array(
             'message' => __('Product skipped.', 'build360-ai'),
@@ -1393,17 +1379,8 @@ class Build360_AI_Ajax {
                 continue;
             }
 
-            // Check if this product still has preview meta
-            $has_previews = false;
-            foreach ($fields as $field) {
-                $preview = get_post_meta($pid, '_build360_ai_preview_' . $field, true);
-                if ($preview !== '' && $preview !== false) {
-                    $has_previews = true;
-                    break;
-                }
-            }
-
-            if (!$has_previews) {
+            $entity_previews = $this->preview_store->get_all_for_entity($pid, 'product');
+            if (empty($entity_previews)) {
                 continue; // Already applied or rejected
             }
 
@@ -1413,15 +1390,9 @@ class Build360_AI_Ajax {
             }
 
             $product_fields_applied = 0;
-            foreach ($fields as $field) {
-                $content = get_post_meta($pid, '_build360_ai_preview_' . $field, true);
-                if ($content === '' || $content === false) {
-                    continue;
-                }
-
+            foreach ($entity_previews as $field => $content) {
                 $this->product_integration->apply_field_content_public($product, $pid, $field, $content);
                 $product_fields_applied++;
-                delete_post_meta($pid, '_build360_ai_preview_' . $field);
             }
 
             if ($product_fields_applied > 0) {
@@ -1431,7 +1402,7 @@ class Build360_AI_Ajax {
                 $applied_count++;
             }
 
-            delete_post_meta($pid, '_build360_ai_preview_job_id');
+            $this->preview_store->delete_entity($pid, 'product');
         }
 
         // Track usage stats
@@ -1670,21 +1641,19 @@ class Build360_AI_Ajax {
                 'review_status' => 'pending_review',
             );
 
-            $has_previews = false;
-            foreach ($fields as $field) {
-                $preview_content = get_term_meta($tid, '_build360_ai_preview_' . $field, true);
-                if ($preview_content !== '' && $preview_content !== false) {
-                    $term_info['previews'][$field] = $preview_content;
-                    $has_previews = true;
-                }
-            }
-
-            if (!$has_previews) {
+            $entity_previews = $this->preview_store->get_all_for_entity($tid, 'term');
+            if (!empty($entity_previews)) {
+                $term_info['previews'] = $entity_previews;
+            } else {
                 $term_info['review_status'] = 'applied';
             }
 
             $terms_detail[] = $term_info;
         }
+
+        // Calculate expiration time (oldest preview + 1 hour)
+        $oldest = $this->preview_store->get_oldest_created_at($job_id);
+        $expires_at = $oldest ? gmdate('Y-m-d\TH:i:s\Z', strtotime($oldest) + 3600) : null;
 
         wp_send_json_success(array(
             'job_id' => $job_id,
@@ -1694,6 +1663,7 @@ class Build360_AI_Ajax {
             'per_page' => $per_page,
             'total_terms' => $total_terms,
             'total_pages' => $total_pages,
+            'expires_at' => $expires_at,
         ));
     }
 
@@ -1723,6 +1693,7 @@ class Build360_AI_Ajax {
         }
 
         $taxonomy_integration = new Build360_AI_Taxonomy_Integration();
+        $stored_previews = $this->preview_store->get_all_for_entity($term_id, 'term');
         $preview_fields = array('description', 'seo_title', 'seo_description');
         $fields_applied = 0;
 
@@ -1730,23 +1701,22 @@ class Build360_AI_Ajax {
             if (isset($edits[$field]) && $edits[$field] !== '') {
                 $content = wp_unslash($edits[$field]);
             } else {
-                $content = get_term_meta($term_id, '_build360_ai_preview_' . $field, true);
+                $content = isset($stored_previews[$field]) ? $stored_previews[$field] : '';
             }
 
-            if ($content === '' || $content === false) {
+            if ($content === '' || $content === null) {
                 continue;
             }
 
             $taxonomy_integration->apply_term_field_content($term_id, $field, $content);
             $fields_applied++;
-            delete_term_meta($term_id, '_build360_ai_preview_' . $field);
         }
 
         if ($fields_applied > 0) {
             update_term_meta($term_id, '_build360_ai_last_generated', current_time('mysql'));
         }
 
-        delete_term_meta($term_id, '_build360_ai_preview_job_id');
+        $this->preview_store->delete_entity($term_id, 'term');
 
         wp_send_json_success(array(
             'message' => sprintf(__('Content applied to %s (%d fields).', 'build360-ai'), $term->name, $fields_applied),
@@ -1773,11 +1743,7 @@ class Build360_AI_Ajax {
             return;
         }
 
-        $preview_fields = array('description', 'seo_title', 'seo_description');
-        foreach ($preview_fields as $field) {
-            delete_term_meta($term_id, '_build360_ai_preview_' . $field);
-        }
-        delete_term_meta($term_id, '_build360_ai_preview_job_id');
+        $this->preview_store->delete_entity($term_id, 'term');
 
         wp_send_json_success(array(
             'message' => __('Category skipped.', 'build360-ai'),
@@ -1821,30 +1787,17 @@ class Build360_AI_Ajax {
                 continue;
             }
 
-            $has_previews = false;
-            foreach ($fields as $field) {
-                $preview = get_term_meta($tid, '_build360_ai_preview_' . $field, true);
-                if ($preview !== '' && $preview !== false) {
-                    $has_previews = true;
-                    break;
-                }
-            }
-
-            if (!$has_previews) {
+            $entity_previews = $this->preview_store->get_all_for_entity($tid, 'term');
+            if (empty($entity_previews)) {
                 continue;
             }
 
-            foreach ($fields as $field) {
-                $content = get_term_meta($tid, '_build360_ai_preview_' . $field, true);
-                if ($content === '' || $content === false) {
-                    continue;
-                }
+            foreach ($entity_previews as $field => $content) {
                 $taxonomy_integration->apply_term_field_content($tid, $field, $content);
-                delete_term_meta($tid, '_build360_ai_preview_' . $field);
             }
 
             update_term_meta($tid, '_build360_ai_last_generated', current_time('mysql'));
-            delete_term_meta($tid, '_build360_ai_preview_job_id');
+            $this->preview_store->delete_entity($tid, 'term');
             $applied_count++;
         }
 
@@ -1916,19 +1869,14 @@ class Build360_AI_Ajax {
         if (!$force && !empty($job_id)) {
             $job_data = get_option('build360_ai_bulk_term_job_' . $job_id);
             if ($job_data && is_array($job_data) && isset($job_data['terms'])) {
-                $preview_fields = array('description', 'seo_title', 'seo_description');
                 $pending_review_count = 0;
 
                 foreach ($job_data['terms'] as $tid => $tdata) {
                     if ($tdata['status'] !== 'completed') {
                         continue;
                     }
-                    foreach ($preview_fields as $field) {
-                        $preview = get_term_meta($tid, '_build360_ai_preview_' . $field, true);
-                        if ($preview !== '' && $preview !== false) {
-                            $pending_review_count++;
-                            break;
-                        }
+                    if ($this->preview_store->has_previews($tid, 'term')) {
+                        $pending_review_count++;
                     }
                 }
 
@@ -1945,16 +1893,7 @@ class Build360_AI_Ajax {
         delete_user_meta(get_current_user_id(), '_build360_ai_active_bulk_term_job');
 
         if (!empty($job_id)) {
-            $job_data = get_option('build360_ai_bulk_term_job_' . $job_id);
-            if ($job_data && is_array($job_data) && isset($job_data['terms'])) {
-                $preview_fields = array('description', 'seo_title', 'seo_description');
-                foreach (array_keys($job_data['terms']) as $tid) {
-                    foreach ($preview_fields as $field) {
-                        delete_term_meta($tid, '_build360_ai_preview_' . $field);
-                    }
-                    delete_term_meta($tid, '_build360_ai_preview_job_id');
-                }
-            }
+            $this->preview_store->delete_job($job_id);
             delete_option('build360_ai_bulk_term_job_' . $job_id);
         }
 

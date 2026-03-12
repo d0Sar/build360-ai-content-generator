@@ -147,8 +147,14 @@ class Build360_AI_Taxonomy_Integration {
             return;
         }
 
-        // Mark as processing
+        // Skip if this term was already processed (guard against duplicate scheduled actions)
+        // Allow 'failed' to retry — duplicates can recover fields that timed out
         $job_data = get_option('build360_ai_bulk_term_job_' . $job_id);
+        if (isset($job_data['terms'][$term_id]) && in_array($job_data['terms'][$term_id]['status'], array('completed', 'processing'), true)) {
+            return;
+        }
+
+        // Mark as processing
         if (isset($job_data['terms'][$term_id])) {
             $job_data['terms'][$term_id]['status'] = 'processing';
             update_option('build360_ai_bulk_term_job_' . $job_id, $job_data, false);
@@ -174,9 +180,9 @@ class Build360_AI_Taxonomy_Integration {
                     $content = $this->extract_content_from_response($result, $field);
 
                     if ($content !== null) {
-                        // Store as preview in term meta
-                        update_term_meta($term_id, '_build360_ai_preview_' . $field, $content);
-                        update_term_meta($term_id, '_build360_ai_preview_job_id', $job_id);
+                        // Store as preview in custom table
+                        $preview_store = new Build360_AI_Preview_Store();
+                        $preview_store->save($job_id, $term_id, 'term', $field, $content);
 
                         $job_data = get_option('build360_ai_bulk_term_job_' . $job_id);
                         if (isset($job_data['terms'][$term_id])) {
@@ -341,6 +347,11 @@ class Build360_AI_Taxonomy_Integration {
             return;
         }
 
+        // Already finalized — don't reschedule anything
+        if ($job_data['status'] === 'completed' || $job_data['status'] === 'cancelled') {
+            return;
+        }
+
         $pending_count = 0;
         foreach ($job_data['terms'] as $tid => $tdata) {
             if ($tdata['status'] === 'pending') {
@@ -369,16 +380,9 @@ class Build360_AI_Taxonomy_Integration {
      * Cleanup bulk term job data
      */
     public function cleanup_bulk_term_job($job_id) {
-        $job_data = get_option('build360_ai_bulk_term_job_' . $job_id);
-        if ($job_data && is_array($job_data) && isset($job_data['terms'])) {
-            $preview_fields = array('description', 'seo_title', 'seo_description');
-            foreach (array_keys($job_data['terms']) as $tid) {
-                foreach ($preview_fields as $field) {
-                    delete_term_meta($tid, '_build360_ai_preview_' . $field);
-                }
-                delete_term_meta($tid, '_build360_ai_preview_job_id');
-            }
-        }
+        // Clean up all previews for this job with 1 query
+        $preview_store = new Build360_AI_Preview_Store();
+        $preview_store->delete_job($job_id);
 
         delete_option('build360_ai_bulk_term_job_' . $job_id);
 
@@ -407,8 +411,10 @@ class Build360_AI_Taxonomy_Integration {
                 break;
             case 'seo_title':
                 $sanitized = sanitize_text_field($content);
-                // Yoast
+                // Yoast - all 3 storage locations
                 update_term_meta($term_id, 'wpseo_title', $sanitized);
+                $this->update_yoast_taxonomy_meta($term_id, 'wpseo_title', $sanitized);
+                $this->update_yoast_indexable_term($term_id, 'title', $sanitized);
                 // RankMath
                 update_term_meta($term_id, 'rank_math_title', $sanitized);
                 // SEOPress
@@ -416,13 +422,79 @@ class Build360_AI_Taxonomy_Integration {
                 break;
             case 'seo_description':
                 $sanitized = wp_kses_post($content);
-                // Yoast
+                // Yoast - all 3 storage locations
                 update_term_meta($term_id, 'wpseo_desc', $sanitized);
+                $this->update_yoast_taxonomy_meta($term_id, 'wpseo_desc', $sanitized);
+                $this->update_yoast_indexable_term($term_id, 'description', $sanitized);
                 // RankMath
                 update_term_meta($term_id, 'rank_math_description', $sanitized);
                 // SEOPress
                 update_term_meta($term_id, '_seopress_titles_desc', $sanitized);
                 break;
         }
+    }
+
+    /**
+     * Update Yoast wpseo_taxonomy_meta option (the primary storage Yoast reads on edit pages)
+     *
+     * @param int    $term_id
+     * @param string $key     'wpseo_title' or 'wpseo_desc'
+     * @param string $value
+     */
+    private function update_yoast_taxonomy_meta($term_id, $key, $value) {
+        $term = get_term($term_id);
+        if (!$term || is_wp_error($term)) {
+            return;
+        }
+
+        $taxonomy = $term->taxonomy;
+        $tax_meta = get_option('wpseo_taxonomy_meta', array());
+
+        if (!isset($tax_meta[$taxonomy])) {
+            $tax_meta[$taxonomy] = array();
+        }
+        if (!isset($tax_meta[$taxonomy][$term_id])) {
+            $tax_meta[$taxonomy][$term_id] = array();
+        }
+
+        $tax_meta[$taxonomy][$term_id][$key] = $value;
+
+        update_option('wpseo_taxonomy_meta', $tax_meta, true);
+    }
+
+    /**
+     * Update Yoast SEO indexable table directly for a term
+     *
+     * @param int    $term_id
+     * @param string $column  'title' or 'description'
+     * @param string $value
+     */
+    private function update_yoast_indexable_term($term_id, $column, $value) {
+        global $wpdb;
+
+        $table = $wpdb->prefix . 'yoast_indexable';
+
+        // Check table exists
+        $table_check = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table));
+        if ($table_check !== $table) {
+            return;
+        }
+
+        // Only allow known columns
+        $allowed = array('title', 'description');
+        if (!in_array($column, $allowed, true)) {
+            return;
+        }
+
+        $wpdb->update(
+            $table,
+            array($column => $value),
+            array(
+                'object_id'   => $term_id,
+                'object_type' => 'term',
+            ),
+            array('%s'),
+            array('%d', '%s')
+        );
     }
 }

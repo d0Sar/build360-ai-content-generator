@@ -33,6 +33,18 @@ function build360_ai_load_textdomain() {
 }
 add_action('plugins_loaded', 'build360_ai_load_textdomain');
 
+// Database migration check
+function build360_ai_check_db_version() {
+    $current_db_version = get_option('build360_ai_db_version', '0');
+    if (version_compare($current_db_version, '1.2.0', '<')) {
+        require_once plugin_dir_path(__FILE__) . 'includes/class-build360-ai-preview-store.php';
+        Build360_AI_Preview_Store::create_table();
+        Build360_AI_Preview_Store::migrate_from_meta();
+        update_option('build360_ai_db_version', '1.2.0');
+    }
+}
+add_action('plugins_loaded', 'build360_ai_check_db_version', 5);
+
 // Initialize the plugin
 function build360_ai_init() {
     // Check if WooCommerce is active
@@ -44,8 +56,24 @@ function build360_ai_init() {
     // Initialize the main plugin class
     $build360_ai = new Build360_AI();
     $build360_ai->init();
+
 }
 add_action('plugins_loaded', 'build360_ai_init');
+
+// Schedule recurring preview cleanup (must run on init, after Action Scheduler is ready)
+add_action('init', 'build360_ai_schedule_preview_cleanup');
+function build360_ai_schedule_preview_cleanup() {
+    if (function_exists('as_has_scheduled_action') && !as_has_scheduled_action('build360_ai_cleanup_expired_previews')) {
+        as_schedule_recurring_action(time(), DAY_IN_SECONDS, 'build360_ai_cleanup_expired_previews', array(), 'build360-ai');
+    }
+}
+
+// Handle the recurring cleanup action
+add_action('build360_ai_cleanup_expired_previews', 'build360_ai_run_preview_cleanup');
+function build360_ai_run_preview_cleanup() {
+    $store = new Build360_AI_Preview_Store();
+    $store->delete_expired(7200); // 2 hours buffer
+}
 
 // WooCommerce missing notice
 function build360_ai_woocommerce_missing_notice() {
@@ -59,6 +87,10 @@ function build360_ai_woocommerce_missing_notice() {
 // Activation hook
 register_activation_hook(__FILE__, 'build360_ai_activate');
 function build360_ai_activate() {
+    // Create custom preview table
+    require_once plugin_dir_path(__FILE__) . 'includes/class-build360-ai-preview-store.php';
+    Build360_AI_Preview_Store::create_table();
+
     // Create necessary database tables and options
     add_option('build360_ai_api_key', '');
     add_option('build360_ai_domain', '');
@@ -110,7 +142,11 @@ function build360_ai_activate() {
 // Deactivation hook
 register_deactivation_hook(__FILE__, 'build360_ai_deactivate');
 function build360_ai_deactivate() {
-    // Clean up if needed
+    // Unschedule recurring preview cleanup
+    if (function_exists('as_unschedule_all_actions')) {
+        as_unschedule_all_actions('build360_ai_cleanup_expired_previews', null, 'build360-ai');
+    }
+
     flush_rewrite_rules();
 }
 

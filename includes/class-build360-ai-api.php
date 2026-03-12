@@ -344,10 +344,10 @@ class Build360_AI_API {
         $base_title = isset($external_api_data['product_title']) ? $external_api_data['product_title'] : '';
         $base_description = !empty($external_api_data['product_description']) ? $external_api_data['product_description'] : '-';
         $fields_requested = isset($external_api_data['fields_requested']) ? $external_api_data['fields_requested'] : array();
-        $categories = isset($external_api_data['categories']) ? $external_api_data['categories'] : '';
-        $attributes = isset($external_api_data['attributes']) ? $external_api_data['attributes'] : '';
-        $tags = isset($external_api_data['tags']) ? $external_api_data['tags'] : '';
-        $keywords = isset($external_api_data['keywords']) ? $external_api_data['keywords'] : '';
+        $categories = !empty($external_api_data['categories']) ? $external_api_data['categories'] : '-';
+        $attributes = !empty($external_api_data['attributes']) ? $external_api_data['attributes'] : '-';
+        $tags = !empty($external_api_data['tags']) ? $external_api_data['tags'] : '-';
+        $keywords = !empty($external_api_data['keywords']) ? $external_api_data['keywords'] : '-';
 
         // Construct the final prompt using agent's system prompt and provided data
         // Placeholders like {{title}}, {{description}}, {{fields_requested}}, {{categories}}, {{attributes}}, {{tags}}, {{keywords}} can be used in the system_prompt_template.

@@ -395,8 +395,14 @@ public function process_single_product_background($job_id, $product_id) {
         return;
     }
 
-    // Mark product as processing
+    // Skip if this product was already processed (guard against duplicate scheduled actions)
+    // Allow 'failed' to retry — duplicates can recover fields that timed out
     $job_data = get_option('build360_ai_bulk_job_' . $job_id);
+    if (isset($job_data['products'][$product_id]) && in_array($job_data['products'][$product_id]['status'], array('completed', 'processing'), true)) {
+        return;
+    }
+
+    // Mark product as processing
     if (isset($job_data['products'][$product_id])) {
         $job_data['products'][$product_id]['status'] = 'processing';
         update_option('build360_ai_bulk_job_' . $job_id, $job_data, false);
@@ -423,9 +429,9 @@ public function process_single_product_background($job_id, $product_id) {
                 $content = $this->extract_content_from_response($result, $field);
 
                 if ($content !== null) {
-                    // Store as preview post meta instead of applying directly
-                    update_post_meta($product_id, '_build360_ai_preview_' . $field, $content);
-                    update_post_meta($product_id, '_build360_ai_preview_job_id', $job_id);
+                    // Store as preview in custom table
+                    $preview_store = new Build360_AI_Preview_Store();
+                    $preview_store->save($job_id, $product_id, 'product', $field, $content);
 
                     // Update job status for this field (slim - no content in job option)
                     $job_data = get_option('build360_ai_bulk_job_' . $job_id);
@@ -676,6 +682,11 @@ private function maybe_finalize_job($job_id) {
         return;
     }
 
+    // Already finalized — don't reschedule anything
+    if ($job_data['status'] === 'completed' || $job_data['status'] === 'cancelled') {
+        return;
+    }
+
     // Count how many are still pending
     $pending_count = 0;
     foreach ($job_data['products'] as $pid => $pdata) {
@@ -721,17 +732,9 @@ private function maybe_finalize_job($job_id) {
  * @param string $job_id
  */
 public function cleanup_bulk_job($job_id) {
-    // Clean up preview post meta for all products in this job
-    $job_data = get_option('build360_ai_bulk_job_' . $job_id);
-    if ($job_data && is_array($job_data) && isset($job_data['products'])) {
-        $preview_fields = array('description', 'short_description', 'seo_title', 'seo_description', 'image_alt');
-        foreach (array_keys($job_data['products']) as $pid) {
-            foreach ($preview_fields as $field) {
-                delete_post_meta($pid, '_build360_ai_preview_' . $field);
-            }
-            delete_post_meta($pid, '_build360_ai_preview_job_id');
-        }
-    }
+    // Clean up all previews for this job with 1 query
+    $preview_store = new Build360_AI_Preview_Store();
+    $preview_store->delete_job($job_id);
 
     delete_option('build360_ai_bulk_job_' . $job_id);
 

@@ -33,4 +33,14 @@ $wpdb->delete(
     $wpdb->postmeta,
     array('meta_key' => '_build360_ai_last_generated'),
     array('%s')
-); 
+);
+
+// Drop custom preview table
+$wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}build360_ai_previews");
+
+// Clean up any remaining preview meta (safety net)
+$wpdb->query("DELETE FROM {$wpdb->postmeta} WHERE meta_key LIKE '_build360_ai_preview_%'");
+$wpdb->query("DELETE FROM {$wpdb->termmeta} WHERE meta_key LIKE '_build360_ai_preview_%'");
+
+// Delete db version option
+delete_option('build360_ai_db_version'); 

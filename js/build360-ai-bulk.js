@@ -487,6 +487,7 @@
                 if (response.success && response.data) {
                     self.renderReviewProducts(response.data);
                     self.renderReviewPagination(response.data);
+                    self.renderExpirationNotice(response.data.expires_at);
                 } else {
                     var msg = (response.data && response.data.message) ? response.data.message : 'Error loading review data.';
                     $body.html('<p class="build360-review-error">' + msg + '</p>');
@@ -603,6 +604,37 @@
 
             html += '</div>';
             $pagination.html(html);
+        },
+
+        renderExpirationNotice: function(expiresAt) {
+            var $notice = $('#build360-ai-bulk-review-modal .build360-review-expiration');
+            if (!expiresAt) {
+                if ($notice.length) $notice.remove();
+                return;
+            }
+
+            var now = new Date();
+            var expires = new Date(expiresAt);
+            var minutesLeft = Math.max(0, Math.round((expires - now) / 60000));
+
+            if (minutesLeft <= 0) {
+                var text = 'Previews have expired. Please run generation again.';
+                var cssClass = 'build360-review-expiration build360-review-expiration-expired';
+            } else if (minutesLeft <= 10) {
+                var text = 'Previews expire in ' + minutesLeft + ' minute' + (minutesLeft !== 1 ? 's' : '') + '!';
+                var cssClass = 'build360-review-expiration build360-review-expiration-warning';
+            } else {
+                var text = 'Previews expire in ' + minutesLeft + ' minutes.';
+                var cssClass = 'build360-review-expiration';
+            }
+
+            if ($notice.length) {
+                $notice.attr('class', cssClass).text(text);
+            } else {
+                $('#build360-ai-bulk-review-modal .build360-review-products').before(
+                    '<div class="' + cssClass + '">' + text + '</div>'
+                );
+            }
         },
 
         acceptProduct: function(productId, $btn) {

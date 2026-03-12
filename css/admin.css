@@ -2250,3 +2250,25 @@
     margin: 12px 0;
     font-size: 13px;
 }
+
+/* Preview expiration notice */
+.build360-review-expiration {
+    background: #f0f6fc;
+    border-left: 3px solid #2271b1;
+    padding: 8px 14px;
+    margin: 0 0 12px;
+    font-size: 13px;
+    border-radius: 3px;
+}
+
+.build360-review-expiration-warning {
+    background: #fcf9e8;
+    border-left-color: #dba617;
+    font-weight: 600;
+}
+
+.build360-review-expiration-expired {
+    background: #fcf0f1;
+    border-left-color: #d63638;
+    font-weight: 600;
+}

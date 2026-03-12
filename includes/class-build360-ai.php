@@ -48,6 +48,7 @@ class Build360_AI {
      */
     private function includes() {
         // Core classes
+        require_once BUILD360_AI_PLUGIN_DIR . 'includes/class-build360-ai-preview-store.php';
         require_once BUILD360_AI_PLUGIN_DIR . 'includes/class-build360-ai-api.php';
         require_once BUILD360_AI_PLUGIN_DIR . 'includes/class-build360-ai-settings.php';
         require_once BUILD360_AI_PLUGIN_DIR . 'includes/class-build360-ai-generator.php';
