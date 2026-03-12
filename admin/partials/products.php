@@ -170,7 +170,7 @@ $products = new WP_Query($args);
     </div>
 
     <!-- Field Selection Modal for Bulk Generation -->
-    <div id="build360-ai-field-select-modal" class="build360-bulk-modal" style="display:none;">
+    <div id="build360-ai-field-select-modal" class="build360-bulk-modal">
         <div class="build360-bulk-modal-overlay"></div>
         <div class="build360-bulk-modal-content build360-field-select-content">
             <div class="build360-bulk-modal-header">
@@ -214,7 +214,7 @@ $products = new WP_Query($args);
     </div>
 
     <!-- Review Modal for Bulk Generation Results -->
-    <div id="build360-ai-bulk-review-modal" class="build360-bulk-modal" style="display:none;">
+    <div id="build360-ai-bulk-review-modal" class="build360-bulk-modal">
         <div class="build360-bulk-modal-overlay"></div>
         <div class="build360-bulk-modal-content build360-review-content">
             <div class="build360-bulk-modal-header">

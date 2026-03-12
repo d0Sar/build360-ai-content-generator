@@ -97,6 +97,15 @@ class Build360_AI_Ajax {
         add_action('wp_ajax_build360_ai_bulk_apply', array($this, 'bulk_apply_handler'));
         add_action('wp_ajax_build360_ai_bulk_reject', array($this, 'bulk_reject_handler'));
         add_action('wp_ajax_build360_ai_bulk_apply_all', array($this, 'bulk_apply_all_handler'));
+        // Bulk TERM generation endpoints
+        add_action('wp_ajax_build360_ai_start_bulk_terms', array($this, 'start_bulk_terms_handler'));
+        add_action('wp_ajax_build360_ai_bulk_term_progress', array($this, 'bulk_term_progress_handler'));
+        add_action('wp_ajax_build360_ai_bulk_term_review', array($this, 'bulk_term_review_handler'));
+        add_action('wp_ajax_build360_ai_bulk_term_apply', array($this, 'bulk_term_apply_handler'));
+        add_action('wp_ajax_build360_ai_bulk_term_reject', array($this, 'bulk_term_reject_handler'));
+        add_action('wp_ajax_build360_ai_bulk_term_apply_all', array($this, 'bulk_term_apply_all_handler'));
+        add_action('wp_ajax_build360_ai_bulk_term_cancel', array($this, 'bulk_term_cancel_handler'));
+        add_action('wp_ajax_build360_ai_bulk_term_dismiss', array($this, 'bulk_term_dismiss_handler'));
     }
 
     /**
@@ -1439,6 +1448,517 @@ class Build360_AI_Ajax {
             'message' => sprintf(__('Content applied to %d products.', 'build360-ai'), $applied_count),
             'applied_count' => $applied_count,
         ));
+    }
+
+    // =========================================================================
+    // BULK TERM (CATEGORY) GENERATION HANDLERS
+    // =========================================================================
+
+    /**
+     * Start a bulk term generation job
+     */
+    public function start_bulk_terms_handler() {
+        check_ajax_referer('build360_ai_start_bulk_terms_nonce', 'nonce');
+
+        if (!current_user_can('manage_categories')) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'build360-ai')));
+            return;
+        }
+
+        $term_ids = isset($_POST['term_ids']) && is_array($_POST['term_ids']) ? array_map('intval', $_POST['term_ids']) : array();
+        $fields = isset($_POST['fields']) && is_array($_POST['fields']) ? array_map('sanitize_text_field', $_POST['fields']) : array();
+
+        if (empty($term_ids)) {
+            wp_send_json_error(array('message' => __('No categories selected.', 'build360-ai')));
+            return;
+        }
+
+        if (empty($fields)) {
+            wp_send_json_error(array('message' => __('No fields selected.', 'build360-ai')));
+            return;
+        }
+
+        $allowed_fields = array('description', 'seo_title', 'seo_description');
+        $fields = array_intersect($fields, $allowed_fields);
+        if (empty($fields)) {
+            wp_send_json_error(array('message' => __('No valid fields selected.', 'build360-ai')));
+            return;
+        }
+
+        // Find agent for product_cat or category
+        $agent_assignments = get_option('build360_ai_agent_assignments', array());
+        $term_agent_id = null;
+        foreach ($agent_assignments as $assignment) {
+            if (isset($assignment['type']) && in_array($assignment['type'], array('product_cat', 'category')) && isset($assignment['agent_id'])) {
+                $term_agent_id = $assignment['agent_id'];
+                break;
+            }
+        }
+
+        if (empty($term_agent_id)) {
+            wp_send_json_error(array('message' => __('No AI Agent is assigned to the category content type. Please check plugin settings.', 'build360-ai')));
+            return;
+        }
+
+        $job_id = 'bulk_term_' . wp_generate_uuid4();
+        $terms_data = array();
+
+        foreach ($term_ids as $tid) {
+            $term = get_term($tid);
+            if (!$term || is_wp_error($term)) {
+                continue;
+            }
+            $terms_data[$tid] = array(
+                'name' => $term->name,
+                'status' => 'pending',
+                'field_statuses' => array(),
+            );
+            foreach ($fields as $field) {
+                $terms_data[$tid]['field_statuses'][$field] = 'pending';
+            }
+        }
+
+        if (empty($terms_data)) {
+            wp_send_json_error(array('message' => __('No valid categories found.', 'build360-ai')));
+            return;
+        }
+
+        $job_data = array(
+            'job_id' => $job_id,
+            'status' => 'processing',
+            'user_id' => get_current_user_id(),
+            'total' => count($terms_data),
+            'completed' => 0,
+            'succeeded' => 0,
+            'failed' => 0,
+            'fields' => array_values($fields),
+            'agent_id' => $term_agent_id,
+            'terms' => $terms_data,
+            'created_at' => current_time('mysql'),
+        );
+
+        update_option('build360_ai_bulk_term_job_' . $job_id, $job_data, false);
+        update_user_meta(get_current_user_id(), '_build360_ai_active_bulk_term_job', $job_id);
+
+        $taxonomy_integration = new Build360_AI_Taxonomy_Integration();
+        $taxonomy_integration->schedule_next_term_batch($job_id);
+
+        if (function_exists('as_schedule_single_action')) {
+            as_schedule_single_action(
+                time() + 3600,
+                'build360_ai_cleanup_bulk_term_job',
+                array($job_id),
+                'build360-ai'
+            );
+        }
+
+        wp_send_json_success(array(
+            'message' => sprintf(__('Bulk generation started for %d categories.', 'build360-ai'), count($terms_data)),
+            'job_id' => $job_id,
+        ));
+    }
+
+    /**
+     * Get progress for a bulk term job
+     */
+    public function bulk_term_progress_handler() {
+        check_ajax_referer('build360_ai_bulk_term_progress_nonce', 'nonce');
+
+        if (!current_user_can('manage_categories')) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'build360-ai')));
+            return;
+        }
+
+        $job_id = isset($_POST['job_id']) ? sanitize_text_field($_POST['job_id']) : '';
+        if (empty($job_id)) {
+            $job_id = get_user_meta(get_current_user_id(), '_build360_ai_active_bulk_term_job', true);
+        }
+
+        if (empty($job_id)) {
+            wp_send_json_error(array('message' => __('No active bulk term job found.', 'build360-ai'), 'no_job' => true));
+            return;
+        }
+
+        $job_data = get_option('build360_ai_bulk_term_job_' . $job_id);
+        if (!$job_data || !is_array($job_data)) {
+            delete_user_meta(get_current_user_id(), '_build360_ai_active_bulk_term_job');
+            wp_send_json_error(array('message' => __('Bulk term job data not found.', 'build360-ai'), 'no_job' => true));
+            return;
+        }
+
+        $terms_summary = array();
+        foreach ($job_data['terms'] as $tid => $tdata) {
+            $field_statuses = isset($tdata['field_statuses']) ? $tdata['field_statuses'] : array();
+            $terms_summary[$tid] = array(
+                'name' => $tdata['name'],
+                'status' => $tdata['status'],
+                'fields' => $field_statuses,
+            );
+        }
+
+        $response = array(
+            'job_id' => $job_data['job_id'],
+            'status' => $job_data['status'],
+            'total' => $job_data['total'],
+            'completed' => $job_data['completed'],
+            'succeeded' => $job_data['succeeded'],
+            'failed' => $job_data['failed'],
+            'terms' => $terms_summary,
+        );
+
+        if (!empty($job_data['error'])) {
+            $response['error'] = $job_data['error'];
+            $response['error_message'] = isset($job_data['error_message']) ? $job_data['error_message'] : '';
+        }
+
+        wp_send_json_success($response);
+    }
+
+    /**
+     * Get paginated review data for a completed bulk term job
+     */
+    public function bulk_term_review_handler() {
+        check_ajax_referer('build360_ai_bulk_term_review_nonce', 'nonce');
+
+        if (!current_user_can('manage_categories')) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'build360-ai')));
+            return;
+        }
+
+        $job_id = isset($_POST['job_id']) ? sanitize_text_field($_POST['job_id']) : '';
+        $page = isset($_POST['page']) ? max(1, intval($_POST['page'])) : 1;
+        $per_page = isset($_POST['per_page']) ? max(1, min(50, intval($_POST['per_page']))) : 20;
+
+        if (empty($job_id)) {
+            $job_id = get_user_meta(get_current_user_id(), '_build360_ai_active_bulk_term_job', true);
+        }
+
+        if (empty($job_id)) {
+            wp_send_json_error(array('message' => __('No active bulk term job found.', 'build360-ai')));
+            return;
+        }
+
+        $job_data = get_option('build360_ai_bulk_term_job_' . $job_id);
+        if (!$job_data || !is_array($job_data)) {
+            wp_send_json_error(array('message' => __('Bulk term job data not found.', 'build360-ai')));
+            return;
+        }
+
+        $fields = isset($job_data['fields']) ? $job_data['fields'] : array();
+
+        $all_term_ids = array();
+        foreach ($job_data['terms'] as $tid => $tdata) {
+            if ($tdata['status'] === 'completed') {
+                $all_term_ids[] = $tid;
+            }
+        }
+
+        $total_terms = count($all_term_ids);
+        $total_pages = max(1, ceil($total_terms / $per_page));
+        $page = min($page, $total_pages);
+        $offset = ($page - 1) * $per_page;
+        $page_term_ids = array_slice($all_term_ids, $offset, $per_page);
+
+        $terms_detail = array();
+        foreach ($page_term_ids as $tid) {
+            $term = get_term($tid);
+            $term_info = array(
+                'id' => $tid,
+                'name' => isset($job_data['terms'][$tid]['name']) ? $job_data['terms'][$tid]['name'] : '',
+                'edit_url' => ($term && !is_wp_error($term)) ? get_edit_term_link($tid, $term->taxonomy) : '',
+                'previews' => array(),
+                'review_status' => 'pending_review',
+            );
+
+            $has_previews = false;
+            foreach ($fields as $field) {
+                $preview_content = get_term_meta($tid, '_build360_ai_preview_' . $field, true);
+                if ($preview_content !== '' && $preview_content !== false) {
+                    $term_info['previews'][$field] = $preview_content;
+                    $has_previews = true;
+                }
+            }
+
+            if (!$has_previews) {
+                $term_info['review_status'] = 'applied';
+            }
+
+            $terms_detail[] = $term_info;
+        }
+
+        wp_send_json_success(array(
+            'job_id' => $job_id,
+            'fields' => $fields,
+            'terms' => $terms_detail,
+            'page' => $page,
+            'per_page' => $per_page,
+            'total_terms' => $total_terms,
+            'total_pages' => $total_pages,
+        ));
+    }
+
+    /**
+     * Apply generated content to a single term
+     */
+    public function bulk_term_apply_handler() {
+        check_ajax_referer('build360_ai_bulk_term_apply_nonce', 'nonce');
+
+        if (!current_user_can('manage_categories')) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'build360-ai')));
+            return;
+        }
+
+        $term_id = isset($_POST['term_id']) ? intval($_POST['term_id']) : 0;
+        $edits = isset($_POST['edits']) && is_array($_POST['edits']) ? $_POST['edits'] : array();
+
+        if ($term_id <= 0) {
+            wp_send_json_error(array('message' => __('Invalid term ID.', 'build360-ai')));
+            return;
+        }
+
+        $term = get_term($term_id);
+        if (!$term || is_wp_error($term)) {
+            wp_send_json_error(array('message' => __('Category not found.', 'build360-ai')));
+            return;
+        }
+
+        $taxonomy_integration = new Build360_AI_Taxonomy_Integration();
+        $preview_fields = array('description', 'seo_title', 'seo_description');
+        $fields_applied = 0;
+
+        foreach ($preview_fields as $field) {
+            if (isset($edits[$field]) && $edits[$field] !== '') {
+                $content = wp_unslash($edits[$field]);
+            } else {
+                $content = get_term_meta($term_id, '_build360_ai_preview_' . $field, true);
+            }
+
+            if ($content === '' || $content === false) {
+                continue;
+            }
+
+            $taxonomy_integration->apply_term_field_content($term_id, $field, $content);
+            $fields_applied++;
+            delete_term_meta($term_id, '_build360_ai_preview_' . $field);
+        }
+
+        if ($fields_applied > 0) {
+            update_term_meta($term_id, '_build360_ai_last_generated', current_time('mysql'));
+        }
+
+        delete_term_meta($term_id, '_build360_ai_preview_job_id');
+
+        wp_send_json_success(array(
+            'message' => sprintf(__('Content applied to %s (%d fields).', 'build360-ai'), $term->name, $fields_applied),
+            'term_id' => $term_id,
+            'fields_applied' => $fields_applied,
+        ));
+    }
+
+    /**
+     * Reject/skip a term's generated content
+     */
+    public function bulk_term_reject_handler() {
+        check_ajax_referer('build360_ai_bulk_term_reject_nonce', 'nonce');
+
+        if (!current_user_can('manage_categories')) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'build360-ai')));
+            return;
+        }
+
+        $term_id = isset($_POST['term_id']) ? intval($_POST['term_id']) : 0;
+
+        if ($term_id <= 0) {
+            wp_send_json_error(array('message' => __('Invalid term ID.', 'build360-ai')));
+            return;
+        }
+
+        $preview_fields = array('description', 'seo_title', 'seo_description');
+        foreach ($preview_fields as $field) {
+            delete_term_meta($term_id, '_build360_ai_preview_' . $field);
+        }
+        delete_term_meta($term_id, '_build360_ai_preview_job_id');
+
+        wp_send_json_success(array(
+            'message' => __('Category skipped.', 'build360-ai'),
+            'term_id' => $term_id,
+        ));
+    }
+
+    /**
+     * Apply all remaining terms that have preview meta
+     */
+    public function bulk_term_apply_all_handler() {
+        check_ajax_referer('build360_ai_bulk_term_apply_all_nonce', 'nonce');
+
+        if (!current_user_can('manage_categories')) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'build360-ai')));
+            return;
+        }
+
+        $job_id = isset($_POST['job_id']) ? sanitize_text_field($_POST['job_id']) : '';
+        if (empty($job_id)) {
+            $job_id = get_user_meta(get_current_user_id(), '_build360_ai_active_bulk_term_job', true);
+        }
+
+        if (empty($job_id)) {
+            wp_send_json_error(array('message' => __('No active bulk term job found.', 'build360-ai')));
+            return;
+        }
+
+        $job_data = get_option('build360_ai_bulk_term_job_' . $job_id);
+        if (!$job_data || !is_array($job_data)) {
+            wp_send_json_error(array('message' => __('Bulk term job data not found.', 'build360-ai')));
+            return;
+        }
+
+        $fields = isset($job_data['fields']) ? $job_data['fields'] : array();
+        $taxonomy_integration = new Build360_AI_Taxonomy_Integration();
+        $applied_count = 0;
+
+        foreach ($job_data['terms'] as $tid => $tdata) {
+            if ($tdata['status'] !== 'completed') {
+                continue;
+            }
+
+            $has_previews = false;
+            foreach ($fields as $field) {
+                $preview = get_term_meta($tid, '_build360_ai_preview_' . $field, true);
+                if ($preview !== '' && $preview !== false) {
+                    $has_previews = true;
+                    break;
+                }
+            }
+
+            if (!$has_previews) {
+                continue;
+            }
+
+            foreach ($fields as $field) {
+                $content = get_term_meta($tid, '_build360_ai_preview_' . $field, true);
+                if ($content === '' || $content === false) {
+                    continue;
+                }
+                $taxonomy_integration->apply_term_field_content($tid, $field, $content);
+                delete_term_meta($tid, '_build360_ai_preview_' . $field);
+            }
+
+            update_term_meta($tid, '_build360_ai_last_generated', current_time('mysql'));
+            delete_term_meta($tid, '_build360_ai_preview_job_id');
+            $applied_count++;
+        }
+
+        wp_send_json_success(array(
+            'message' => sprintf(__('Content applied to %d categories.', 'build360-ai'), $applied_count),
+            'applied_count' => $applied_count,
+        ));
+    }
+
+    /**
+     * Cancel a running bulk term job
+     */
+    public function bulk_term_cancel_handler() {
+        check_ajax_referer('build360_ai_bulk_term_cancel_nonce', 'nonce');
+
+        if (!current_user_can('manage_categories')) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'build360-ai')));
+            return;
+        }
+
+        $job_id = isset($_POST['job_id']) ? sanitize_text_field($_POST['job_id']) : '';
+        if (empty($job_id)) {
+            $job_id = get_user_meta(get_current_user_id(), '_build360_ai_active_bulk_term_job', true);
+        }
+
+        if (empty($job_id)) {
+            wp_send_json_error(array('message' => __('No active bulk term job found.', 'build360-ai')));
+            return;
+        }
+
+        $job_data = get_option('build360_ai_bulk_term_job_' . $job_id);
+        if (!$job_data || !is_array($job_data)) {
+            wp_send_json_error(array('message' => __('Bulk term job data not found.', 'build360-ai')));
+            return;
+        }
+
+        $job_data['status'] = 'cancelled';
+        update_option('build360_ai_bulk_term_job_' . $job_id, $job_data, false);
+
+        if (function_exists('as_unschedule_all_actions')) {
+            as_unschedule_all_actions('build360_ai_process_single_term', null, 'build360-ai');
+        }
+
+        delete_user_meta(get_current_user_id(), '_build360_ai_active_bulk_term_job');
+
+        wp_send_json_success(array(
+            'message' => __('Bulk term generation job has been cancelled.', 'build360-ai'),
+            'job_id' => $job_id,
+        ));
+    }
+
+    /**
+     * Dismiss bulk term progress bar
+     */
+    public function bulk_term_dismiss_handler() {
+        check_ajax_referer('build360_ai_bulk_term_dismiss_nonce', 'nonce');
+
+        if (!current_user_can('manage_categories')) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'build360-ai')));
+            return;
+        }
+
+        $force = isset($_POST['force']) && $_POST['force'] === '1';
+        $job_id = isset($_POST['job_id']) ? sanitize_text_field($_POST['job_id']) : '';
+        if (empty($job_id)) {
+            $job_id = get_user_meta(get_current_user_id(), '_build360_ai_active_bulk_term_job', true);
+        }
+
+        if (!$force && !empty($job_id)) {
+            $job_data = get_option('build360_ai_bulk_term_job_' . $job_id);
+            if ($job_data && is_array($job_data) && isset($job_data['terms'])) {
+                $preview_fields = array('description', 'seo_title', 'seo_description');
+                $pending_review_count = 0;
+
+                foreach ($job_data['terms'] as $tid => $tdata) {
+                    if ($tdata['status'] !== 'completed') {
+                        continue;
+                    }
+                    foreach ($preview_fields as $field) {
+                        $preview = get_term_meta($tid, '_build360_ai_preview_' . $field, true);
+                        if ($preview !== '' && $preview !== false) {
+                            $pending_review_count++;
+                            break;
+                        }
+                    }
+                }
+
+                if ($pending_review_count > 0) {
+                    wp_send_json_success(array(
+                        'has_pending_reviews' => true,
+                        'pending_count' => $pending_review_count,
+                    ));
+                    return;
+                }
+            }
+        }
+
+        delete_user_meta(get_current_user_id(), '_build360_ai_active_bulk_term_job');
+
+        if (!empty($job_id)) {
+            $job_data = get_option('build360_ai_bulk_term_job_' . $job_id);
+            if ($job_data && is_array($job_data) && isset($job_data['terms'])) {
+                $preview_fields = array('description', 'seo_title', 'seo_description');
+                foreach (array_keys($job_data['terms']) as $tid) {
+                    foreach ($preview_fields as $field) {
+                        delete_term_meta($tid, '_build360_ai_preview_' . $field);
+                    }
+                    delete_term_meta($tid, '_build360_ai_preview_job_id');
+                }
+            }
+            delete_option('build360_ai_bulk_term_job_' . $job_id);
+        }
+
+        wp_send_json_success(array('dismissed' => true));
     }
 
     /**

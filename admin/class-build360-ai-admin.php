@@ -146,8 +146,9 @@ class Build360_AI_Admin {
         $is_plugin_page = (strpos($hook_suffix, 'build360-ai') !== false);
         $is_post_or_page_edit = ($screen && in_array($screen->post_type, array('post', 'page')) && in_array($hook_suffix, array('post.php', 'post-new.php')));
         $is_taxonomy_edit = ($screen && $screen->base === 'term' && in_array($screen->taxonomy, array('product_cat', 'category')));
+        $is_taxonomy_list = ($screen && $screen->base === 'edit-tags' && in_array($screen->taxonomy, array('product_cat', 'category')));
 
-        if (!$is_product_edit_page && !$is_product_list_page && !$is_plugin_page && !$is_post_or_page_edit && !$is_taxonomy_edit) {
+        if (!$is_product_edit_page && !$is_product_list_page && !$is_plugin_page && !$is_post_or_page_edit && !$is_taxonomy_edit && !$is_taxonomy_list) {
             return;
         }
 
@@ -470,6 +471,71 @@ class Build360_AI_Admin {
                     'accept_all_confirm' => __('Apply generated content to all remaining products?', 'build360-ai'),
                     'dismiss_pending_warning' => __('product(s) have generated content that has not been reviewed yet. Dismiss anyway? The unreviewed content will be discarded.', 'build360-ai'),
                     'page_of' => __('Page %1$s of %2$s', 'build360-ai'),
+                    'purchase_tokens' => __('Purchase more tokens', 'build360-ai'),
+                ),
+                'account_url' => rtrim(get_option('build360_ai_domain', 'https://build360.gr'), '/') . '/account',
+            ));
+        }
+
+        // Enqueue bulk TERM generation JS on taxonomy list pages (product_cat, category)
+        if ($is_taxonomy_list) {
+            $active_term_job_id = get_user_meta(get_current_user_id(), '_build360_ai_active_bulk_term_job', true);
+
+            wp_enqueue_script(
+                'build360-ai-bulk-terms',
+                BUILD360_AI_PLUGIN_URL . 'js/build360-ai-bulk-terms.js',
+                array('jquery'),
+                rand(10000, 99999),
+                true
+            );
+
+            wp_localize_script('build360-ai-bulk-terms', 'build360_ai_bulk_term_vars', array(
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'active_job_id' => $active_term_job_id ? $active_term_job_id : '',
+                'nonces' => array(
+                    'start_bulk_terms' => wp_create_nonce('build360_ai_start_bulk_terms_nonce'),
+                    'bulk_term_progress' => wp_create_nonce('build360_ai_bulk_term_progress_nonce'),
+                    'bulk_term_review' => wp_create_nonce('build360_ai_bulk_term_review_nonce'),
+                    'bulk_term_apply' => wp_create_nonce('build360_ai_bulk_term_apply_nonce'),
+                    'bulk_term_reject' => wp_create_nonce('build360_ai_bulk_term_reject_nonce'),
+                    'bulk_term_apply_all' => wp_create_nonce('build360_ai_bulk_term_apply_all_nonce'),
+                    'bulk_term_cancel' => wp_create_nonce('build360_ai_bulk_term_cancel_nonce'),
+                    'bulk_term_dismiss' => wp_create_nonce('build360_ai_bulk_term_dismiss_nonce'),
+                ),
+                'strings' => array(
+                    'processing' => __('Processing...', 'build360-ai'),
+                    'completed' => __('Completed', 'build360-ai'),
+                    'failed' => __('Failed', 'build360-ai'),
+                    'cancelled' => __('Cancelled', 'build360-ai'),
+                    'pending' => __('Pending', 'build360-ai'),
+                    'cancel_confirm' => __('Are you sure you want to cancel this bulk generation job?', 'build360-ai'),
+                    'progress_title' => __('Build360 AI - Bulk Category Generation', 'build360-ai'),
+                    'view_results' => __('View Results', 'build360-ai'),
+                    'cancel' => __('Cancel', 'build360-ai'),
+                    'close' => __('Close', 'build360-ai'),
+                    'description' => __('Description', 'build360-ai'),
+                    'seo_title' => __('SEO Title', 'build360-ai'),
+                    'seo_description' => __('SEO Description', 'build360-ai'),
+                    'terms_processed' => __('categories processed', 'build360-ai'),
+                    'succeeded' => __('succeeded', 'build360-ai'),
+                    'of' => __('of', 'build360-ai'),
+                    'edit' => __('Edit', 'build360-ai'),
+                    'dismiss' => __('Dismiss', 'build360-ai'),
+                    'select_fields_title' => __('Select Fields to Generate', 'build360-ai'),
+                    'start_generation' => __('Start Generation', 'build360-ai'),
+                    'terms_selected' => __('categories selected', 'build360-ai'),
+                    'no_terms_selected' => __('Please select at least one category.', 'build360-ai'),
+                    'review_title' => __('Review Generated Content', 'build360-ai'),
+                    'accept' => __('Accept', 'build360-ai'),
+                    'skip' => __('Skip', 'build360-ai'),
+                    'accept_all' => __('Accept All Remaining', 'build360-ai'),
+                    'batch_info' => __('Categories are processed in batches of 50 for reliability.', 'build360-ai'),
+                    'applying' => __('Applying...', 'build360-ai'),
+                    'applied' => __('Content applied!', 'build360-ai'),
+                    'skipped' => __('Skipped', 'build360-ai'),
+                    'no_fields_selected' => __('Please select at least one field.', 'build360-ai'),
+                    'accept_all_confirm' => __('Apply generated content to all remaining categories?', 'build360-ai'),
+                    'dismiss_pending_warning' => __('category(ies) have generated content that has not been reviewed yet. Dismiss anyway? The unreviewed content will be discarded.', 'build360-ai'),
                     'purchase_tokens' => __('Purchase more tokens', 'build360-ai'),
                 ),
                 'account_url' => rtrim(get_option('build360_ai_domain', 'https://build360.gr'), '/') . '/account',

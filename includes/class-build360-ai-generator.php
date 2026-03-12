@@ -246,6 +246,59 @@ class Build360_AI_Generator {
     }
 
     /**
+     * Generate content for a taxonomy term using an agent.
+     *
+     * @param WP_Term $term The term object.
+     * @param string $field The field to generate (description, seo_title, seo_description).
+     * @param string $agent_id The agent ID.
+     * @return string|WP_Error Generated content or WP_Error.
+     */
+    public function generate_term_content_with_agent($term, $field, $agent_id) {
+        if (!$term || is_wp_error($term)) {
+            return new WP_Error('invalid_term', __('Invalid term provided.', 'build360-ai'));
+        }
+        if (empty($agent_id)) {
+            return new WP_Error('missing_agent_id', __('Agent ID is required.', 'build360-ai'));
+        }
+
+        $term_data = array(
+            'name' => $term->name,
+            'description' => $term->description,
+        );
+
+        // Get parent category chain for context
+        $parent_names = array();
+        $parent_id = $term->parent;
+        while ($parent_id > 0) {
+            $parent_term = get_term($parent_id, $term->taxonomy);
+            if ($parent_term && !is_wp_error($parent_term)) {
+                $parent_names[] = $parent_term->name;
+                $parent_id = $parent_term->parent;
+            } else {
+                break;
+            }
+        }
+
+        $extra_context = array(
+            'categories' => !empty($parent_names) ? implode(' > ', array_reverse($parent_names)) . ' > ' . $term->name : $term->name,
+            'attributes' => '',
+            'tags' => '',
+            'keywords' => '',
+        );
+
+        switch ($field) {
+            case 'description':
+                return $this->generate_product_description($term_data, $agent_id, $extra_context);
+            case 'seo_title':
+                return $this->generate_seo_title($term_data, $agent_id, $extra_context);
+            case 'seo_description':
+                return $this->generate_seo_meta_description($term_data, $agent_id, $extra_context);
+            default:
+                return new WP_Error('invalid_field', sprintf(__('Field "%s" is not supported for term content generation.', 'build360-ai'), $field));
+        }
+    }
+
+    /**
      * Generate content for a specific field
      *
      * @param string $content_type Type of content (product, post, page, etc.)
